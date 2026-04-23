@@ -129,3 +129,92 @@
    - 회원 및 비회원 유저 리스트 표 페이지
    - 회원과 비회원을 필터링해서 볼 수 있는 기능
    - 각 회원의 결제 여부를 확인할 수 있음
+
+## 6. API 구조 설계 (API Architecture)
+
+Next.js 14 App Router의 `app/api/.../route.ts` (Route Handlers) 및 Supabase 기반으로 설계된 MECE한 API 구조입니다.
+
+### 6.1. Auth & Users (`/api/auth`, `/api/users`)
+Supabase Auth와 연동하여 인증 및 확장된 유저 정보를 관리합니다.
+- `POST /api/auth/guest` : 비회원용 세션 토큰 발급 (비회원 주문 조회용)
+- `GET /api/users/me` : 현재 로그인한 유저의 프로필 정보 및 남은 크레딧/결제 상태 조회
+- `PATCH /api/users/me` : 유저 프로필(닉네임 등) 수정
+
+### 6.2. Feeds (`/api/feeds`)
+메인 랜딩 등에 노출되는 공개 데이터를 처리합니다.
+- `GET /api/feeds` : 메인 랜딩용 공개 해몽 결과 목록 조회 (Pagination 지원)
+
+### 6.3. AI Processing (`/api/ai`)
+해몽 생성 및 이미지 비동기 처리를 담당합니다.
+- `POST /api/ai/generate` : 결제 완료 건을 대상으로 Gemini API를 활용하여 해몽 분석 및 이미지 생성 작업 비동기 트리거
+
+### 6.4. Dreams (`/api/dreams`)
+생성된 꿈 해몽 결과 조회 및 관리를 담당합니다.
+- `GET /api/dreams/[id]` : 특정 꿈 해몽 및 이미지 상세 조회 (공유 링크 및 상세 페이지용, 권한 체크)
+
+### 6.5. Orders & Payments (`/api/orders`, `/api/payments`)
+주문서 생성 및 결제 웹훅 처리를 담당합니다.
+- `POST /api/orders` : 결제 전 주문 정보(텍스트 기본/이미지 추가 등) 생성 
+- `GET /api/orders/me` : 유저의 전체 주문/결제 내역 조회 (마이페이지 캘린더 및 리스트용, 토큰 기반)
+- `POST /api/payments/toss/confirm` : Toss Payments 결제 승인 요청 및 서버 상태(결제 완료) 업데이트 Webhook
+
+### 6.6. Admin (`/api/admin`)
+관리자 대시보드 및 리스트 관리를 위한 어드민 전용 API입니다.
+- `GET /api/admin/dashboard` : 기간별 매출, 유저 가입 수 등 대시보드 통계 데이터 조회
+- `GET /api/admin/orders` : 전체 주문/결제 내역 리스트 조회 및 필터링
+- `GET /api/admin/users` : 회원 및 비회원 유저 리스트 조회 및 상태 확인
+- `POST /api/admin/orders/[id]/regenerate` : LLM 해몽 재생성(regenerate) 요청
+
+## 7. DB 스키마 설계 (DB Schema - Supabase)
+
+Supabase PostgreSQL 환경에 맞춘 MECE한 테이블 설계입니다.
+
+### 7.1. profiles (회원 정보)
+Supabase의 기본 `auth.users` 테이블과 1:1로 연결되는 확장 프로필 테이블입니다. 관리자 권한 및 기본 유저 정보를 관리합니다.
+| 컬럼명 | 데이터 타입 | 제약조건 (Null 여부 등) | 설명 |
+| :--- | :--- | :--- | :--- |
+| `id` | `uuid` | PK, FK(`auth.users.id`), **NOT NULL** | 유저 고유 ID |
+| `email` | `text` | **NOT NULL** | 유저 이메일 |
+| `nickname` | `text` | NULL | 유저 닉네임 |
+| `provider` | `text` | NULL | 소셜 로그인 제공자 (google, kakao 등) |
+| `role` | `text` | Default `'USER'`, **NOT NULL** | 권한 (`'USER'`, `'ADMIN'`) |
+| `created_at` | `timestamptz` | Default `now()`, **NOT NULL** | 가입 일시 |
+
+### 7.2. guests (비회원 정보)
+비회원 주문 및 조회를 위한 정보를 저장합니다.
+| 컬럼명 | 데이터 타입 | 제약조건 (Null 여부 등) | 설명 |
+| :--- | :--- | :--- | :--- |
+| `id` | `uuid` | PK, Default `uuid_generate_v4()`, **NOT NULL** | 비회원 고유 ID |
+| `phone_number` | `text` | **NOT NULL** | 휴대폰 번호 (조회용 아이디 역할) |
+| `password_hash` | `text` | **NOT NULL** | 암호화된 비밀번호 (조회용) |
+| `created_at` | `timestamptz` | Default `now()`, **NOT NULL** | 최초 주문 일시 |
+
+### 7.3. orders (주문 및 결제 내역)
+회원과 비회원의 모든 결제 및 주문 정보를 관리합니다. 토스페이먼츠 연동 기준입니다.
+| 컬럼명 | 데이터 타입 | 제약조건 (Null 여부 등) | 설명 |
+| :--- | :--- | :--- | :--- |
+| `id` | `uuid` | PK, Default `uuid_generate_v4()`, **NOT NULL** | 주문 고유 ID |
+| `order_number` | `text` | Unique, **NOT NULL** | 토스페이먼츠 연동용 `orderId` |
+| `user_type` | `text` | **NOT NULL** | 구매자 유형 (`'MEMBER'`, `'GUEST'`) |
+| `profile_id` | `uuid` | FK(`profiles.id`), NULL | (회원인 경우) 구매자 ID |
+| `guest_id` | `uuid` | FK(`guests.id`), NULL | (비회원인 경우) 비회원 ID |
+| `total_amount` | `integer` | **NOT NULL** | 총 결제 금액 |
+| `status` | `text` | Default `'PENDING'`, **NOT NULL** | 결제 상태 (`'PENDING'`, `'SUCCESS'`, `'FAILED'`) |
+| `payment_key` | `text` | NULL | 토스페이먼츠 `paymentKey` |
+| `created_at` | `timestamptz` | Default `now()`, **NOT NULL** | 주문 생성 일시 |
+| `updated_at` | `timestamptz` | Default `now()`, **NOT NULL** | 주문 상태 업데이트 일시 |
+
+### 7.4. dreams (해몽 및 결과 데이터)
+주문과 1:1 (또는 1:N)로 연결되는 꿈 내용, AI 해몽 결과, 생성된 이미지를 저장합니다.
+| 컬럼명 | 데이터 타입 | 제약조건 (Null 여부 등) | 설명 |
+| :--- | :--- | :--- | :--- |
+| `id` | `uuid` | PK, Default `uuid_generate_v4()`, **NOT NULL** | 해몽 고유 ID |
+| `order_id` | `uuid` | FK(`orders.id`), **NOT NULL** | 결제된 주문 ID |
+| `expert_style` | `text` | **NOT NULL** | 선택한 해몽 전문가 스타일 (프로이트, 융 등) |
+| `dream_content` | `text` | **NOT NULL** | 유저가 입력한 꿈 내용 (Input) |
+| `ai_analysis` | `text` | NULL | LLM이 생성한 심층 해몽 텍스트 (Output) |
+| `image_url` | `text` | NULL | 생성된 꿈 이미지 URL (옵션 결제 시) |
+| `is_public` | `boolean` | Default `false`, **NOT NULL** | 공개 피드 노출 여부 |
+| `status` | `text` | Default `'PENDING'`, **NOT NULL** | AI 처리 상태 (`'PENDING'`, `'GENERATING'`, `'COMPLETED'`, `'FAILED'`) |
+| `created_at` | `timestamptz` | Default `now()`, **NOT NULL** | 레코드 생성 일시 |
+| `updated_at` | `timestamptz` | Default `now()`, **NOT NULL** | 해몽 완료/업데이트 일시 |
