@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,7 @@ import { Brain, Network, Infinity as InfinityIcon, Sparkles, Image as ImageIcon,
  * 유저의 꿈을 입력받고 해몽 전문가 스타일을 선택하는 페이지.
  */
 export default function DreamTellerPage() {
+  const router = useRouter();
   const [selectedExpert, setSelectedExpert] = useState<string | null>(null);
   const [dreamContent, setDreamContent] = useState("");
   const [withImage, setWithImage] = useState(true);
@@ -336,6 +338,10 @@ export default function DreamTellerPage() {
               size="lg"
               className="rounded-full bg-purple-600 text-white hover:bg-purple-700 h-14 px-8 text-base font-semibold shadow-md transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
               disabled={!selectedExpert || dreamContent.trim().length < 5}
+              onClick={() => {
+                // TODO: 입력한 데이터(전문가, 꿈내용 등)를 상태관리나 세션스토리지 등에 저장 후 결제 페이지로 넘겨야 함
+                router.push(`/payments?amount=${calculateTotal()}`);
+              }}
             >
               꿈 풀이 요청하기
               <ArrowRight className="ml-2 w-5 h-5" />
