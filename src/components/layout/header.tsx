@@ -26,7 +26,7 @@ export function Header() {
           {/* TODO: 로그인 상태에 따라 분기 처리 및 마이페이지 등 추가 필요 */}
           <Link 
             href="/auth" 
-            className={buttonVariants({ variant: "default", className: "rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-sm px-6" })}
+            className={buttonVariants({ variant: "default", className: "rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md hover:shadow-lg transition-all border-0 px-6 font-medium" })}
           >
             로그인
           </Link>
@@ -48,7 +48,7 @@ export function Header() {
                 {/* TODO: 로그인 상태에 따라 분기 처리 및 마이페이지 등 추가 필요 */}
                 <Link 
                   href="/auth" 
-                  className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-sm text-base py-6" })}
+                  className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md text-base py-6 border-0 font-medium" })}
                 >
                   로그인
                 </Link>

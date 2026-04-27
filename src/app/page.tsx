@@ -43,7 +43,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
             className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-tight"
           >
-            오늘 새벽 꿈,{" "}
+            오늘 밤 꿈,{" "}
             <br className="hidden sm:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500">
               아직도 기억나세요?
@@ -61,7 +61,7 @@ export default function Home() {
             꿈 속 상징과 감정을 분석합니다.
             <br />
             <span className="font-semibold text-slate-700">
-              단 3분, 커피 한 잔 값으로 어젯밤 꿈의 진짜 의미를 알아보세요.
+              단 3분, 내 무의식이 건네는 특별한 메시지를 확인해 보세요.
             </span>
           </motion.p>
 
