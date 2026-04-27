@@ -57,7 +57,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
             className="text-lg sm:text-xl text-slate-600 max-w-2xl leading-relaxed break-keep"
           >
-            프로이트의 정신분석, 칼 융의 원형 이론, 최신 신경과학 연구를 학습한 AI가 꿈 속 상징과 감정을 분석합니다.
+            심리학과 최신 AI 기술이 만나 당신의 꿈을 완벽하게 분석합니다.
             <br />
             <span className="font-semibold text-slate-700">
               단 3분, 내 무의식이 건네는 특별한 메시지를 확인해 보세요.
