@@ -149,7 +149,7 @@ export default function DreamTellerPage() {
           className="mb-10"
         >
           <Accordion 
-            type="multiple" 
+            multiple 
             value={accordionValue} 
             onValueChange={setAccordionValue}
             className="w-full space-y-6"
