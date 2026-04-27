@@ -6,8 +6,8 @@ import { loadTossPayments, TossPaymentsWidgets } from "@tosspayments/tosspayment
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Receipt, Scissors } from "lucide-react";
 
-// 토스페이먼츠 테스트용 클라이언트 키
-const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+// 토스페이먼츠 테스트용 클라이언트 키 (환경변수 우선, 없으면 공통 테스트 키 사용)
+const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
 
 function PaymentsContent() {
   const router = useRouter();
@@ -17,14 +17,22 @@ function PaymentsContent() {
 
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const [customerKey] = useState(() => "customer_" + Math.random().toString(36).substring(2, 10));
-  const [orderId] = useState(() => "dream_test_" + Math.random().toString(36).substring(2, 10));
-  
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}. ${today.getMonth() + 1}. ${today.getDate()}.`;
+  const [customerKey, setCustomerKey] = useState<string>("");
+  const [orderId, setOrderId] = useState<string>("");
+  const [formattedDate, setFormattedDate] = useState<string>("");
+
+  useEffect(() => {
+    // Hydration 에러 방지를 위해 클라이언트 마운트 후 랜덤 값 할당
+    setCustomerKey("customer_" + Math.random().toString(36).substring(2, 10));
+    setOrderId("dream_test_" + Math.random().toString(36).substring(2, 10));
+    
+    const today = new Date();
+    setFormattedDate(`${today.getFullYear()}. ${today.getMonth() + 1}. ${today.getDate()}.`);
+  }, []);
 
   useEffect(() => {
     async function fetchPaymentWidget() {
+      if (!customerKey) return;
       try {
         const tossPayments = await loadTossPayments(clientKey);
         const widgets = tossPayments.widgets({ customerKey });
@@ -82,12 +90,11 @@ function PaymentsContent() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center py-12 px-4 sm:px-6">
-      <div className="w-full max-w-5xl flex items-center justify-between mb-8">
+      <div className="w-full max-w-5xl flex items-center mb-8">
         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
           <span className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">AI</span>
           Dream Teller
         </h1>
-        <div className="text-sm font-medium text-slate-500 hidden sm:block">비회원 주문조회</div>
       </div>
 
       <div className="w-full max-w-5xl flex flex-col md:flex-row gap-6 items-start">
