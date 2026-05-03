@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -8,8 +8,27 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { createClient } from "@/lib/supabase/server";
 
-export function Header() {
+/**
+ * 전역 헤더 컴포넌트
+ * - 서비스 로고 + 로그인 상태에 따른 네비게이션 분기
+ * - 비회원: 로그인 버튼
+ * - 회원: 마이페이지 버튼
+ * - 모바일 반응형: 햄버거 메뉴 → Drawer Sheet
+ */
+export async function Header() {
+  // 서버에서 유저 인증 상태 확인
+  let isAuthenticated = false;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    isAuthenticated = !!user;
+  } catch {
+    // Supabase 미연동 상태에서는 비인증으로 처리
+    isAuthenticated = false;
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-[#FDFBF7]/95 backdrop-blur supports-[backdrop-filter]:bg-[#FDFBF7]/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
@@ -23,13 +42,22 @@ export function Header() {
         
         {/* 데스크탑 네비게이션 */}
         <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
-          {/* TODO: 로그인 상태에 따라 분기 처리 및 마이페이지 등 추가 필요 */}
-          <Link 
-            href="/auth" 
-            className={buttonVariants({ variant: "default", className: "rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md hover:shadow-lg transition-all border-0 px-6 font-medium" })}
-          >
-            로그인
-          </Link>
+          {isAuthenticated ? (
+            <Link 
+              href="/my-page" 
+              className={buttonVariants({ variant: "default", className: "rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md hover:shadow-lg transition-all border-0 px-6 font-medium gap-2" })}
+            >
+              <User className="w-4 h-4" />
+              마이페이지
+            </Link>
+          ) : (
+            <Link 
+              href="/auth" 
+              className={buttonVariants({ variant: "default", className: "rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md hover:shadow-lg transition-all border-0 px-6 font-medium" })}
+            >
+              로그인
+            </Link>
+          )}
         </nav>
 
         {/* 모바일 햄버거 메뉴 */}
@@ -45,13 +73,22 @@ export function Header() {
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-4 mt-8 px-4 pb-8 text-center">
-                {/* TODO: 로그인 상태에 따라 분기 처리 및 마이페이지 등 추가 필요 */}
-                <Link 
-                  href="/auth" 
-                  className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md text-base py-6 border-0 font-medium" })}
-                >
-                  로그인
-                </Link>
+                {isAuthenticated ? (
+                  <Link 
+                    href="/my-page" 
+                    className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md text-base py-6 border-0 font-medium gap-2" })}
+                  >
+                    <User className="w-5 h-5" />
+                    마이페이지
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/auth" 
+                    className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md text-base py-6 border-0 font-medium" })}
+                  >
+                    로그인
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -60,4 +97,3 @@ export function Header() {
     </header>
   );
 }
-

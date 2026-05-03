@@ -92,6 +92,7 @@ const LoginForm = () => {
   /**
    * 소셜 로그인 핸들러
    * - Supabase Auth의 signInWithOAuth를 사용하여 OAuth 플로우 시작
+   * - Supabase 미연동 시에는 데모 모드 마이페이지로 이동
    * - redirectTo에 환경별 콜백 URL을 지정
    */
   const handleSocialLogin = async (provider: Provider) => {
@@ -99,8 +100,17 @@ const LoginForm = () => {
       setLoadingProvider(provider);
       setErrorMessage(null);
 
-      const supabase = createClient();
       const siteUrl = getSiteUrl();
+
+      // Supabase 환경변수 미설정 시 데모 모드로 마이페이지 이동
+      // TODO: 백엔드 연동 완료 후 이 분기 제거
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+      if (!supabaseUrl || supabaseUrl.startsWith("your")) {
+        window.location.href = `/my-page?demo=true&provider=${provider}`;
+        return;
+      }
+
+      const supabase = createClient();
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
