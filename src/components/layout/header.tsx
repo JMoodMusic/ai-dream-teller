@@ -51,12 +51,20 @@ export async function Header() {
               마이페이지
             </Link>
           ) : (
-            <Link 
-              href="/auth" 
-              className={buttonVariants({ variant: "default", className: "rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md hover:shadow-lg transition-all border-0 px-6 font-medium" })}
-            >
-              로그인
-            </Link>
+            <>
+              <Link 
+                href="/guest-login" 
+                className="text-slate-500 hover:text-purple-600 transition-colors font-medium mr-1"
+              >
+                비회원 주문조회
+              </Link>
+              <Link 
+                href="/auth" 
+                className={buttonVariants({ variant: "default", className: "rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md hover:shadow-lg transition-all border-0 px-6 font-medium" })}
+              >
+                로그인
+              </Link>
+            </>
           )}
         </nav>
 
@@ -82,12 +90,20 @@ export async function Header() {
                     마이페이지
                   </Link>
                 ) : (
-                  <Link 
-                    href="/auth" 
-                    className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md text-base py-6 border-0 font-medium" })}
-                  >
-                    로그인
-                  </Link>
+                  <>
+                    <Link 
+                      href="/guest-login" 
+                      className={buttonVariants({ variant: "outline", size: "lg", className: "w-full rounded-full text-base py-6 font-medium text-slate-600 border-slate-200" })}
+                    >
+                      비회원 주문조회
+                    </Link>
+                    <Link 
+                      href="/auth" 
+                      className={buttonVariants({ variant: "default", size: "lg", className: "w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-md text-base py-6 border-0 font-medium" })}
+                    >
+                      로그인
+                    </Link>
+                  </>
                 )}
               </nav>
             </SheetContent>

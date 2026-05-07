@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Brain, Network, Infinity as InfinityIcon, Sparkles, Image as ImageIcon, Info, ArrowRight, Maximize2, Minimize2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * 프로덕트 상세 페이지 (/dream-teller)
@@ -20,6 +23,22 @@ export default function DreamTellerPage() {
   const [dreamContent, setDreamContent] = useState("");
   const [withImage, setWithImage] = useState(true);
   const [accordionValue, setAccordionValue] = useState<string[]>(["step-1"]);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestPassword, setGuestPassword] = useState("");
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const EXPERTS = [
     {
@@ -85,15 +104,36 @@ export default function DreamTellerPage() {
     }
   };
 
-  const isAllExpanded = accordionValue.length === 3;
+  const isAllExpanded = accordionValue.length === (isAuthenticated === false ? 4 : 3);
   
   const toggleExpandAll = () => {
     if (isAllExpanded) {
       setAccordionValue([]);
     } else {
-      setAccordionValue(["step-1", "step-2", "step-3"]);
+      setAccordionValue(isAuthenticated === false ? ["step-1", "step-2", "step-3", "step-4"] : ["step-1", "step-2", "step-3"]);
     }
   };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/[^0-9]/g, "");
+    let formatted = rawValue;
+    
+    if (rawValue.length < 4) {
+      formatted = rawValue;
+    } else if (rawValue.length < 8) {
+      formatted = rawValue.replace(/(\d{3})(\d{1,4})/, "$1-$2");
+    } else if (rawValue.length === 10) {
+      formatted = rawValue.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
+    } else {
+      formatted = rawValue.replace(/(\d{3})(\d{4})(\d{1,4})/, "$1-$2-$3").slice(0, 13);
+    }
+    
+    setGuestPhone(formatted);
+  };
+
+  const isFormValid = selectedExpert && 
+                      dreamContent.trim().length >= 5 && 
+                      (isAuthenticated || (guestPhone.length >= 12 && guestPassword.length >= 4));
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 selection:bg-purple-200 relative overflow-hidden">
@@ -104,6 +144,24 @@ export default function DreamTellerPage() {
       </div>
 
       <main className="relative z-10 w-full max-w-3xl mx-auto px-4 pt-16 sm:px-6">
+        {/* Dev Tools Toggle */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="fixed top-24 right-4 z-50 bg-slate-900 text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 border border-slate-700">
+            <span className="text-xs font-bold text-yellow-400">DEV TOOLS</span>
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="dev-auth" className="text-sm font-medium cursor-pointer">
+                {isAuthenticated ? "회원 모드" : "비회원 모드"}
+              </label>
+              <Checkbox 
+                id="dev-auth"
+                checked={isAuthenticated === true}
+                onCheckedChange={(c) => setIsAuthenticated(c === true)}
+                className="bg-slate-800 border-slate-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -280,7 +338,8 @@ export default function DreamTellerPage() {
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-pink-100 text-pink-600">추천</span>
                       </h3>
                       <p className="text-sm text-slate-500 mt-1">
-                        AI가 텍스트 분석 결과와 어울리는 예술적인 이미지를 1장 생성합니다. (+500원)
+                        AI가 텍스트 분석 결과와 어울리는 예술적인 이미지를 1장 생성합니다.<br className="hidden sm:block" />
+                        <span className="inline-block mt-0.5 sm:mt-1">(+500원)</span>
                       </p>
                     </div>
                   </div>
@@ -291,12 +350,87 @@ export default function DreamTellerPage() {
                         onCheckedChange={(checked) => setWithImage(checked === true)}
                         className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                       />
-                      <span className="font-medium text-slate-700 select-none">추가할게요</span>
+                      <span className="font-medium text-slate-700 select-none whitespace-nowrap">추가할게요</span>
                     </label>
                   </div>
                 </div>
+                {isAuthenticated === false && (
+                  <div className="flex justify-end mt-4">
+                    <Button
+                      variant="outline"
+                      className="rounded-full px-6 border-slate-200 hover:bg-slate-50 shadow-sm"
+                      onClick={() => {
+                        if (!accordionValue.includes("step-4")) {
+                          setAccordionValue((prev) => [...prev, "step-4"]);
+                        }
+                        setTimeout(() => {
+                          document.getElementById("step-4")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }, 100);
+                      }}
+                    >
+                      다음 단계로 넘어가기 <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
+
+            {/* 4. 비회원 정보 입력 (결제 조회용) */}
+            {isAuthenticated === false && (
+              <AccordionItem id="step-4" value="step-4" className="border-none bg-white/40 backdrop-blur-sm rounded-3xl px-6 py-2 shadow-sm scroll-mt-24">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3 text-left">
+                    <span className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors shrink-0 ${
+                      guestPhone.length >= 12 && guestPassword.length >= 4 ? 'bg-purple-600 text-white' : 'bg-slate-900 text-white'
+                    }`}>
+                      4
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-xl font-bold text-slate-800">
+                        비회원 정보 입력 (결제 조회용)
+                      </span>
+                      {!accordionValue.includes("step-4") && guestPhone.length > 0 && (
+                        <span className="text-sm font-medium text-purple-600 mt-1">
+                          * 입력 완료
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                  <div className="p-5 rounded-2xl bg-white/70 border border-slate-200/60 shadow-sm space-y-4">
+                    <p className="text-sm text-slate-500 mb-2">
+                      결제 후 해몽 결과를 확인하기 위해 사용할 전화번호와 비밀번호를 입력해주세요.
+                    </p>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="guestPhone" className="text-slate-600 font-medium">전화번호</Label>
+                        <Input
+                          id="guestPhone"
+                          type="tel"
+                          placeholder="010-0000-0000"
+                          value={guestPhone}
+                          onChange={handlePhoneChange}
+                          maxLength={13}
+                          className="h-12 bg-white/80 focus:border-purple-400 focus:ring-purple-400/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guestPassword" className="text-slate-600 font-medium">비밀번호 (4자리 이상)</Label>
+                        <Input
+                          id="guestPassword"
+                          type="password"
+                          placeholder="비밀번호 입력"
+                          value={guestPassword}
+                          onChange={(e) => setGuestPassword(e.target.value)}
+                          className="h-12 bg-white/80 focus:border-purple-400 focus:ring-purple-400/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
           </Accordion>
         </motion.div>
 
@@ -337,7 +471,7 @@ export default function DreamTellerPage() {
             <Button
               size="lg"
               className="rounded-full bg-purple-600 text-white hover:bg-purple-700 h-14 px-8 text-base font-semibold shadow-md transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-              disabled={!selectedExpert || dreamContent.trim().length < 5}
+              disabled={!isFormValid}
               onClick={() => {
                 // TODO: 입력한 데이터(전문가, 꿈내용 등)를 상태관리나 세션스토리지 등에 저장 후 결제 페이지로 넘겨야 함
                 router.push(`/payments?amount=${calculateTotal()}`);
