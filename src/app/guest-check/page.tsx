@@ -197,32 +197,28 @@ export default function GuestCheckPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-y-1/4 -translate-x-1/4 pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex-1 space-y-3">
-              <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-yellow-300" />
+          <div className="relative z-10 flex flex-col gap-7">
+            <div className="space-y-4">
+              <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 break-keep">
+                <Sparkles className="w-6 h-6 text-yellow-300 shrink-0" />
                 회원이 되시면 더 많은 혜택이 있어요!
               </h3>
-              <ul className="space-y-1.5 text-sm sm:text-base text-white/90 font-medium mt-3">
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
+              <ul className="space-y-2.5 text-sm sm:text-base text-white/90 font-medium ml-1">
+                <li className="flex items-center gap-2 break-keep">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-300 shrink-0" />
                   첫 구매 시 500원 할인 쿠폰 즉시 지급
                 </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
+                <li className="flex items-center gap-2 break-keep">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-300 shrink-0" />
                   꿈 해석 기록 영구 보존 및 심리 일기 캘린더 제공
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
-                  번거로운 정보 입력 없이 1초 만에 빠른 결제
                 </li>
               </ul>
             </div>
             
-            <div className="shrink-0 flex items-center">
+            <div className="w-full pt-1">
               <Button
                 onClick={() => router.push("/auth")}
-                className="w-full sm:w-auto h-14 px-8 rounded-full bg-white text-purple-600 hover:bg-slate-50 font-bold text-base shadow-md transition-transform hover:scale-105"
+                className="w-full h-14 rounded-full bg-white text-purple-600 hover:bg-slate-50 font-bold text-base shadow-md transition-transform hover:scale-105"
               >
                 3초 만에 회원가입 하기
               </Button>

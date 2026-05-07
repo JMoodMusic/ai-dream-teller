@@ -16,7 +16,7 @@ export function Footer() {
         <div className="flex flex-wrap justify-center items-center gap-4 text-sm font-medium text-muted-foreground pt-2">
           <Link href="/terms" className="hover:underline underline-offset-4">이용약관</Link>
           <Link href="/privacy" className="hover:underline underline-offset-4">개인정보처리방침</Link>
-          <Link href="mailto:support@aidreamteller.com" className="hover:underline underline-offset-4">문의하기</Link>
+          <Link href="/contact" className="hover:underline underline-offset-4">문의하기</Link>
         </div>
       </div>
     </footer>
