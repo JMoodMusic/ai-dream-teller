@@ -221,12 +221,10 @@ export default function GuestCheckPage() {
             
             <div className="shrink-0 flex items-center">
               <Button
-                asChild
+                onClick={() => router.push("/auth")}
                 className="w-full sm:w-auto h-14 px-8 rounded-full bg-white text-purple-600 hover:bg-slate-50 font-bold text-base shadow-md transition-transform hover:scale-105"
               >
-                <Link href="/auth">
-                  3초 만에 회원가입 하기
-                </Link>
+                3초 만에 회원가입 하기
               </Button>
             </div>
           </div>
