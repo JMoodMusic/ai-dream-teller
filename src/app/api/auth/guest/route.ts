@@ -22,7 +22,8 @@ export async function POST(request: Request) {
     }
 
     // 게스트 세션 쿠키 설정 (임시)
-    cookies().set("guest_session", "dummy_guest_token", {
+    const cookieStore = await cookies();
+    cookieStore.set("guest_session", "dummy_guest_token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24, // 1일
