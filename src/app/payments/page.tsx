@@ -20,6 +20,7 @@ function PaymentsContent() {
   const [customerKey, setCustomerKey] = useState<string>("");
   const [orderId, setOrderId] = useState<string>("");
   const [formattedDate, setFormattedDate] = useState<string>("");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     // Hydration 에러 방지를 위해 클라이언트 마운트 후 랜덤 값 할당
@@ -74,6 +75,7 @@ function PaymentsContent() {
 
   const handlePayment = async () => {
     try {
+      setPaymentError(null); // 에러 초기화
       if (!widgets) return;
       await widgets.requestPayment({
         orderId: orderId,
@@ -83,8 +85,19 @@ function PaymentsContent() {
         successUrl: window.location.origin + "/payments/success",
         failUrl: window.location.origin + "/payments/fail",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      // 사용자가 창을 닫거나 취소한 경우는 에러로 표출하지 않음
+      if (err.name === "UserCancelError" || err.message?.includes("취소")) {
+        return;
+      }
+      
+      // 오프라인 상태 또는 네트워크 에러 처리
+      if (!window.navigator.onLine || err.name === "NetworkError" || err.message?.includes("Network")) {
+        setPaymentError("인터넷 연결이 불안정합니다. 네트워크 상태를 확인하고 다시 시도해주세요.");
+      } else {
+        setPaymentError("결제 요청 중 오류가 발생했습니다: " + (err.message || "알 수 없는 오류"));
+      }
     }
   };
 
@@ -170,6 +183,14 @@ function PaymentsContent() {
           
           <div id="payment-method" className="w-full mb-2" />
           <div id="agreement" className="w-full mb-6" />
+
+          {/* 에러 메시지 노출 */}
+          {paymentError && (
+            <div className="mb-4 p-4 bg-red-50/50 border border-red-200 rounded-xl text-red-600 text-sm font-medium flex items-start gap-2">
+              <span className="w-5 h-5 flex items-center justify-center rounded-full bg-red-100 flex-shrink-0 mt-0.5">!</span>
+              <p>{paymentError}</p>
+            </div>
+          )}
 
           <Button
             className="w-full h-14 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg border-0 shadow-sm transition-all"

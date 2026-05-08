@@ -213,6 +213,7 @@ const MyPageContent = ({
   const [nickname, setNickname] = useState(initialNickname);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [nicknameInput, setNicknameInput] = useState(initialNickname);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   // 더보기 페이지네이션: 초기 ITEMS_PER_PAGE개만 표시
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -242,9 +243,21 @@ const MyPageContent = ({
    * TODO: Supabase user_metadata 업데이트 로직 연동
    */
   const handleSaveNickname = useCallback(async () => {
-    if (nicknameInput.trim() === "") return;
-    // TODO: Supabase updateUser({ data: { nickname: nicknameInput.trim() } }) 연동
-    setNickname(nicknameInput.trim());
+    const trimmed = nicknameInput.trim();
+    if (trimmed === "") {
+      setNicknameError("닉네임을 입력해주세요.");
+      return;
+    }
+
+    const isValid = /^[가-힣a-zA-Z0-9\s]+$/.test(trimmed);
+    if (!isValid) {
+      setNicknameError("특수문자는 사용할 수 없어요.");
+      return;
+    }
+
+    setNicknameError(null);
+    // TODO: Supabase updateUser({ data: { nickname: trimmed } }) 연동
+    setNickname(trimmed);
     setIsEditingNickname(false);
   }, [nicknameInput]);
 
@@ -253,6 +266,7 @@ const MyPageContent = ({
    */
   const handleCancelEdit = useCallback(() => {
     setNicknameInput(nickname);
+    setNicknameError(null);
     setIsEditingNickname(false);
   }, [nickname]);
 
@@ -367,33 +381,45 @@ const MyPageContent = ({
             </div>
 
             {/* 닉네임 (수정 가능) */}
-            <div className="flex items-center gap-2 w-full justify-center">
+            <div className="flex flex-col items-center gap-1 w-full justify-center">
               {isEditingNickname ? (
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    value={nicknameInput}
-                    onChange={(e) => setNicknameInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveNickname()}
-                    className="w-32 text-center text-sm border border-purple-300 rounded-lg px-2 py-1.5 bg-white/80 focus:outline-none focus:ring-2 focus:ring-purple-300/50 transition-all"
-                    autoFocus
-                    maxLength={20}
-                  />
-                  <button
-                    onClick={handleSaveNickname}
-                    className="p-1 rounded-md hover:bg-green-50 text-green-500 transition-colors"
-                    aria-label="닉네임 저장"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="p-1 rounded-md hover:bg-red-50 text-red-400 transition-colors"
-                    aria-label="닉네임 수정 취소"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={nicknameInput}
+                      onChange={(e) => {
+                        setNicknameInput(e.target.value);
+                        if (nicknameError) setNicknameError(null);
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveNickname()}
+                      className={`w-36 text-center text-sm border rounded-lg px-2 py-1.5 bg-white/80 focus:outline-none focus:ring-2 transition-all ${
+                        nicknameError ? "border-red-400 focus:ring-red-300/50" : "border-purple-300 focus:ring-purple-300/50"
+                      }`}
+                      autoFocus
+                      maxLength={20}
+                    />
+                    <button
+                      onClick={handleSaveNickname}
+                      className="p-1 rounded-md hover:bg-green-50 text-green-500 transition-colors"
+                      aria-label="닉네임 저장"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-1 rounded-md hover:bg-slate-100 text-slate-400 transition-colors"
+                      aria-label="닉네임 수정 취소"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {nicknameError && (
+                    <span className="text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">
+                      {nicknameError}
+                    </span>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-slate-800 text-lg">

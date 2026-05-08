@@ -25,16 +25,40 @@ const DUMMY_DATA = {
   ],
 };
 
-export default function DreamResultPage() {
+export default function DreamResultPage({ params }: { params: { "order-id": string } }) {
   const router = useRouter();
+  const orderId = params["order-id"];
   const isOwner = true; // 시연을 위해 true로 설정 (달력 노출)
   const [isCopied, setIsCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Hydration 에러 방지: 클라이언트에서만 렌더링하도록 설정
+  // Hydration 에러 방지 및 E2E 권한 시뮬레이션
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // [E2E 테스트용 임시 로직] 권한 없는 접근 강제 시뮬레이션
+    if (orderId === "unauthorized_123") {
+      alert("해당 해몽 결과에 대한 접근 권한이 없습니다.");
+      router.replace("/");
+    }
+  }, [orderId, router]);
+
+  // 권한이 없는 경우 화면을 그리지 않음
+  if (orderId === "unauthorized_123") return null;
+
+  // [E2E 테스트용 임시 로직] 유효하지 않은 ID 접근 시 404 커스텀 페이지
+  if (orderId !== "ord_123456") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-stone-50 px-4 text-center">
+        <h1 className="text-6xl md:text-8xl font-serif text-purple-900 mb-4">404</h1>
+        <p className="text-stone-600 text-lg mb-8">요청하신 해몽 결과를 찾을 수 없거나 유효하지 않은 링크입니다.</p>
+        <Button onClick={() => router.push("/")} className="rounded-full bg-purple-600 hover:bg-purple-700 text-white px-8 h-12">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          홈으로 돌아가기
+        </Button>
+      </div>
+    );
+  }
 
   const handleCopyLink = async () => {
     try {

@@ -1,6 +1,7 @@
 "use client";
 
-import { HelpCircle, Mail, Send } from "lucide-react";
+import { useState } from "react";
+import { HelpCircle, Mail, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +13,22 @@ import {
 } from "@/components/ui/accordion";
 
 export default function ContactPage() {
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    // 가상의 폼 전송 대기 시간 (1.5초)
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     alert("문의가 접수되었습니다. 영업일 기준 1~2일 내에 답변드리겠습니다.");
+    
+    // 폼 초기화
+    (e.target as HTMLFormElement).reset();
+    setIsLoading(false);
   };
 
   return (
@@ -125,10 +139,20 @@ export default function ContactPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-[#3B12D0] hover:bg-[#2c0da0] text-white h-14 rounded-xl font-bold text-lg mt-4 shadow-md transition-all hover:shadow-lg"
+              disabled={isLoading}
+              className="w-full bg-[#3B12D0] hover:bg-[#2c0da0] text-white h-14 rounded-xl font-bold text-lg mt-4 shadow-md transition-all hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <Send className="w-5 h-5 mr-2" />
-              문의 보내기
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  전송 중...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  문의 보내기
+                </>
+              )}
             </Button>
           </form>
         </div>

@@ -40,6 +40,37 @@ export default function DreamTellerPage() {
     checkAuth();
   }, []);
 
+  // Load state from sessionStorage on mount (to persist state when navigating back)
+  useEffect(() => {
+    const savedState = sessionStorage.getItem("dreamTellerState");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.selectedExpert) setSelectedExpert(parsed.selectedExpert);
+        if (parsed.dreamContent) setDreamContent(parsed.dreamContent);
+        if (parsed.withImage !== undefined) setWithImage(parsed.withImage);
+        if (parsed.accordionValue) setAccordionValue(parsed.accordionValue);
+        if (parsed.guestPhone) setGuestPhone(parsed.guestPhone);
+        if (parsed.guestPassword) setGuestPassword(parsed.guestPassword);
+      } catch (e) {
+        console.error("Failed to parse saved state", e);
+      }
+    }
+  }, []);
+
+  // Save state to sessionStorage whenever it changes
+  useEffect(() => {
+    const stateToSave = {
+      selectedExpert,
+      dreamContent,
+      withImage,
+      accordionValue,
+      guestPhone,
+      guestPassword
+    };
+    sessionStorage.setItem("dreamTellerState", JSON.stringify(stateToSave));
+  }, [selectedExpert, dreamContent, withImage, accordionValue, guestPhone, guestPassword]);
+
   const EXPERTS = [
     {
       id: "freud",
@@ -295,16 +326,29 @@ export default function DreamTellerPage() {
                     placeholder="누구와 있었나요? 어떤 감정을 느꼈나요? 기억나는 파편적인 조각들이라도 좋습니다."
                     className="min-h-[200px] resize-y bg-white/70 backdrop-blur-md border-slate-200 focus-visible:ring-purple-400 text-base p-5 rounded-2xl shadow-sm transition-all group-hover:shadow-md"
                     value={dreamContent}
+                    maxLength={1000}
                     onChange={(e) => setDreamContent(e.target.value)}
                   />
-                  <div className="absolute bottom-4 right-4 text-xs text-slate-400">
+                  {/* 글자수 카운터: 900자 이상 시 경고색 표시 */}
+                  <div className={`absolute bottom-4 right-4 text-xs transition-colors ${
+                    dreamContent.length >= 1000
+                      ? "text-red-500 font-semibold"
+                      : dreamContent.length >= 900
+                        ? "text-amber-500"
+                        : "text-slate-400"
+                  }`}>
                     {dreamContent.length} / 1000자
                   </div>
                 </div>
-                <div className="flex justify-end mt-4">
+                <div className="flex flex-col items-end gap-2 mt-4">
+                  {dreamContent.length > 0 && dreamContent.trim().length < 5 && (
+                    <span className="text-xs text-amber-500 font-medium px-2 animate-in fade-in slide-in-from-bottom-1">
+                      정확한 해몽을 위해 최소 5자 이상 입력해주세요.
+                    </span>
+                  )}
                   <Button
                     variant="outline"
-                    className="rounded-full px-6 border-slate-200 hover:bg-slate-50 shadow-sm"
+                    className="rounded-full px-6 border-slate-200 hover:bg-slate-50 shadow-sm transition-all"
                     onClick={handleNextToStep3}
                     disabled={dreamContent.trim().length < 5}
                   >
