@@ -117,6 +117,8 @@ const LoginForm = () => {
         options: {
           // 환경별 도메인으로 콜백 URL 구성
           redirectTo: `${siteUrl}/auth/callback`,
+          // 카카오 로그인 시 이메일 권한(account_email)을 포함하여 요청
+          scopes: provider === "kakao" ? "account_email profile_nickname profile_image" : undefined,
         },
       });
 

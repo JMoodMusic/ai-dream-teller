@@ -174,6 +174,8 @@ Next.js 14 App Router의 `app/api/.../route.ts` (Route Handlers) 및 Supabase �
 Supabase Auth와 연동하여 인증 및 확장된 유저 정보를 관리합니다.
 
 - `POST /api/auth/guest` : 비회원용 세션 토큰 발급 (비회원 주문 조회용)
+- `GET /api/auth/callback` : 소셜 로그인(Google, Kakao) 인증 후 콜백 처리 및 세션 저장
+- `POST /api/auth/sign-out` : 로그아웃 처리 및 세션 파기
 - `GET /api/users/me` : 현재 로그인한 유저의 프로필 정보 및 남은 크레딧/결제 상태 조회
 - `PATCH /api/users/me` : 유저 프로필(닉네임 등) 수정
 
