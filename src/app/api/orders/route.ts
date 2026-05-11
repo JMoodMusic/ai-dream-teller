@@ -23,15 +23,24 @@ export async function POST(request: Request) {
     } else if (guestPhone && guestPassword) {
       userType = "GUEST";
       // 비회원 정보 조회
+      interface GuestInfo {
+        id: string;
+        phone_number: string;
+        password_hash: string;
+        created_at: string;
+      }
+
       const { data: existingGuest } = await supabase
         .rpc("get_guest_by_phone", { p_phone_number: guestPhone })
         .maybeSingle();
 
-      if (existingGuest) {
-        if (existingGuest.password_hash !== guestPassword) {
+      const guest = existingGuest as GuestInfo | null;
+
+      if (guest) {
+        if (guest.password_hash !== guestPassword) {
           return NextResponse.json({ message: "비회원 비밀번호가 일치하지 않습니다." }, { status: 401 });
         }
-        guestId = existingGuest.id;
+        guestId = guest.id;
       } else {
         guestId = crypto.randomUUID();
         const { error: guestError } = await supabase

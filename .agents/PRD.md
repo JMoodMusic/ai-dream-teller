@@ -336,4 +336,8 @@ Supabase의 기본 `auth.users` 테이블과 1:1로 연결되는 확장 프로�
 | | 결제 실패 업데이트 | 결제창 이탈 또는 실패로 `/api/payments/toss/fail` 호출 시 | DB의 해당 `order_id` 상태가 `FAILED`로 정상 변경됨 | ✅ 완료 | **[검증 완료]** 실패 라우트 호출 시 RPC 함수에 의해 DB 상태가 FAILED로 즉시 변경되는 로직 검증 완료 |
 | | 가주문 유효성 검증 | 취소되거나 만료된(`FAILED`) 상태의 `order_id`로 결제 승인 시도 | 400 Bad Request 에러 반환 및 토스 승인 요청 차단 | ✅ 완료 | **[코드 개선 및 검증 완료]** `confirm` API 내부에 `order.status === 'FAILED'` 일 경우 400 리턴하는 차단 방어막 추가하여 토스 서버 호출 차단 |
 | | 웹훅 위변조 방어 | 토스페이먼츠 공식망이 아닌 외부에서 임의의 페이로드로 웹훅 호출 | 서명 검증/잘못된 orderId 필터링을 통해 상태 변경 무시 | ✅ 완료 | **[검증 완료]** 등록된 상태값 이외의 페이로드 무시 및 없는 orderId 전달 시 RPC 내부에서 update skip 처리됨 확인 |
+| **MyPage & Integration**<br/>`/api/orders/me`<br/>`/api/orders/[id]` | 통합 주문 내역 조회 | 회원 세션과 비회원(`guest_session`) 쿠키가 동시에 존재할 경우 우선순위 | 회원(Member) 세션 우선 조회 또는 명확한 구분을 통해 해당 유저의 데이터만 반환 | ✅ 완료 | **[검증 완료]** `auth.getUser()`가 있으면 회원, 없으면 쿠키의 `guest_id`를 사용하는 하이라이트 로직 구현 및 검증 완료. |
+| | 개별 주문 상세 조회 | 비회원이 자신이 주문하지 않은 다른 비회원의 `order_number`로 접근 | 403 Forbidden 반환 (is_public이 false인 경우) | ✅ 완료 | **[검증 완료]** `/api/orders/[id]` 라우트에서 `isOwner` 체크 로직 추가. 소유자도 아니고 공개된 꿈도 아닌 경우 403 차단 확인. |
+| | AI 분석 상태 표시 | `dreams.status`가 `PENDING`인 상태에서 상세 페이지 접근 | 결과 텍스트 대신 'AI 분석 중' 애니메이션 UI 노출 | ✅ 완료 | **[UI/UX 개선]** `DreamResultPage`에 `status` 기반 조건부 렌더링 도입. 분석 중일 때 에테리얼한 오로라 배경과 로딩 스피너 UI 적용. |
+| | 분석 완료 후 자동 갱신 | 사용자가 'AI 분석 중' 화면에서 대기하다가 새로고침 클릭 | 분석이 완료된 경우(`COMPLETED`) 즉시 실제 해몽 결과 화면으로 전환 | ✅ 완료 | **[검증 완료]** 새로고침 버튼(`router.refresh()`) 및 데이터 리페칭 로직으로 상태 변화 즉시 반영 확인. |
 | **Admin**<br/>`/api/admin` | 어드민 권한 제어 | 일반 User 또는 Guest 권한의 토큰으로 관리자 API 호출 시도 | 403 Forbidden | ⬜ 대기 | |

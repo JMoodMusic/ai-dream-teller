@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
@@ -12,18 +13,43 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: Supabase guests 테이블 연결 후 실제 검증 로직 구현
-    // 임시로 전화번호와 비밀번호가 있으면 성공으로 처리하고 쿠키 설정
-    if (phoneNumber === "010-0000-0000" && password === "wrong") {
-       return NextResponse.json(
+    const supabase = await createClient();
+
+    interface GuestInfo {
+      id: string;
+      phone_number: string;
+      password_hash: string;
+      created_at: string;
+    }
+
+    // RPC 함수를 사용하여 비회원 정보 조회
+    const { data: guests, error: guestError } = await supabase.rpc(
+      "get_guest_by_phone",
+      { p_phone_number: phoneNumber.replace(/-/g, "") }
+    );
+
+    const typedGuests = guests as GuestInfo[] | null;
+
+    if (guestError || !typedGuests || typedGuests.length === 0) {
+      return NextResponse.json(
+        { message: "입력하신 정보를 찾을 수 없습니다." },
+        { status: 401 }
+      );
+    }
+
+    const targetGuest = typedGuests[0];
+
+    // 비밀번호 검증 (현재는 단순 비교, 운영 환경에서는 해싱 필요)
+    if (targetGuest.password_hash !== password) {
+      return NextResponse.json(
         { message: "비밀번호가 일치하지 않습니다." },
         { status: 401 }
       );
     }
 
-    // 게스트 세션 쿠키 설정 (임시)
+    // 게스트 세션 쿠키 설정 (guest_id 저장)
     const cookieStore = await cookies();
-    cookieStore.set("guest_session", "dummy_guest_token", {
+    cookieStore.set("guest_session", targetGuest.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24, // 1일

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -16,33 +16,55 @@ interface PurchaseItem {
   dreamTitle: string;
   type: "text" | "image";
   price: number;
-  status: "completed" | "pending";
+  status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
 }
 
-const DUMMY_PURCHASES: PurchaseItem[] = [
-  {
-    id: "1",
-    orderId: "dream-001",
-    date: new Date(2026, 4, 1),
-    dreamTitle: "하늘을 나는 고래",
-    type: "image",
-    price: 2000,
-    status: "completed",
-  },
-  {
-    id: "2",
-    orderId: "dream-002",
-    date: new Date(2026, 4, 3),
-    dreamTitle: "끝없는 미로 속 거울방",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-];
+// DUMMY_PURCHASES 제거됨
 
 export default function GuestCheckPage() {
   const router = useRouter();
+  const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("/api/orders/me");
+        if (!res.ok) throw new Error("Failed to fetch orders");
+        const { orders } = await res.json();
+        
+        interface OrderResponse {
+          id: string;
+          order_number: string;
+          created_at: string;
+          total_amount: number;
+          dreams: {
+            status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
+            dream_content: string;
+          }[];
+        }
+
+        const mapped: PurchaseItem[] = (orders as OrderResponse[]).map((o) => ({
+          id: o.id,
+          orderId: o.order_number,
+          date: new Date(o.created_at),
+          dreamTitle: o.dreams[0]?.dream_content?.slice(0, 20) + "..." || "제목 없음",
+          type: o.total_amount > 1500 ? "image" : "text",
+          price: o.total_amount,
+          status: o.dreams[0]?.status || "PENDING",
+        }));
+        
+        setPurchases(mapped);
+      } catch (err) {
+        console.error("Order fetch error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -61,6 +83,17 @@ export default function GuestCheckPage() {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[60vh] bg-[#FDFBF7]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium animate-pulse">조회 내역을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 relative overflow-hidden">
@@ -109,13 +142,13 @@ export default function GuestCheckPage() {
               </h2>
             </div>
             <span className="text-xs text-slate-400 bg-slate-100/80 px-2.5 py-1 rounded-full">
-              총 {DUMMY_PURCHASES.length}건
+              총 {purchases.length}건
             </span>
           </div>
 
-          {DUMMY_PURCHASES.length > 0 ? (
+          {purchases.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {DUMMY_PURCHASES.map((purchase, idx) => (
+              {purchases.map((purchase, idx) => (
                 <motion.div
                   key={purchase.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -160,6 +193,21 @@ export default function GuestCheckPage() {
                           {purchase.type === "image"
                             ? "텍스트 + 이미지"
                             : "텍스트"}
+                        </span>
+                        <span
+                          className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${
+                            purchase.status === "COMPLETED"
+                              ? "bg-green-50 text-green-500"
+                              : purchase.status === "FAILED"
+                              ? "bg-red-50 text-red-500"
+                              : "bg-amber-50 text-amber-500 animate-pulse"
+                          }`}
+                        >
+                          {purchase.status === "COMPLETED" 
+                            ? "분석 완료" 
+                            : purchase.status === "FAILED"
+                            ? "분석 실패"
+                            : "AI 분석 중..."}
                         </span>
                       </div>
                     </div>

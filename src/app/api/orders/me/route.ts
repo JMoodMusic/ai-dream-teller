@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const cookieStore = await cookies();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    const guestId = cookieStore.get("guest_session")?.value;
 
-    if (authError || !user) {
+    if (!user && !guestId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // Supabase Foreign Key 연동으로 dreams 테이블 정보까지 가져오기
-    const { data: orders, error: ordersError } = await supabase
+    let query = supabase
       .from("orders")
       .select(`
         *,
@@ -19,8 +22,16 @@ export async function GET() {
           id, expert_style, dream_content, ai_analysis, image_url, status, is_public, created_at
         )
       `)
-      .eq("profile_id", user.id)
+      .eq("status", "SUCCESS") // 결제 완료된 건만 표시
       .order("created_at", { ascending: false });
+
+    if (user) {
+      query = query.eq("profile_id", user.id);
+    } else if (guestId) {
+      query = query.eq("guest_id", guestId);
+    }
+
+    const { data: orders, error: ordersError } = await query;
 
     if (ordersError) throw ordersError;
 

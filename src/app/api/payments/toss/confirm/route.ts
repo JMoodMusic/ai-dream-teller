@@ -8,24 +8,33 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    interface OrderRecord {
+      id: string;
+      order_number: string;
+      total_amount: number;
+      status: string;
+    }
+
     // 1. DB 주문 내역 조회 및 금액 교차 검증
     const { data: order, error: fetchError } = await supabase
       .rpc("get_order_by_number", { p_order_number: orderId })
       .single();
 
-    if (fetchError || !order) {
+    const typedOrder = order as OrderRecord;
+
+    if (fetchError || !typedOrder) {
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    if (order.total_amount !== Number(amount)) {
+    if (typedOrder.total_amount !== Number(amount)) {
       return NextResponse.json({ message: "Amount mismatch - verification failed" }, { status: 400 });
     }
 
-    if (order.status === "SUCCESS") {
+    if (typedOrder.status === "SUCCESS") {
       return NextResponse.json({ message: "Already processed" }, { status: 400 });
     }
 
-    if (order.status === "FAILED") {
+    if (typedOrder.status === "FAILED") {
       return NextResponse.json({ message: "Order already failed or cancelled" }, { status: 400 });
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -45,7 +45,7 @@ interface PurchaseItem {
   dreamTitle: string;
   type: "text" | "image";
   price: number;
-  status: "completed" | "pending";
+  status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
 }
 
 /**
@@ -58,116 +58,7 @@ const ITEMS_PER_PAGE = 3;
  * - 텍스트 전용 / 텍스트 + 이미지 혼합
  * TODO: Supabase에서 실제 데이터를 가져오도록 교체
  */
-const DUMMY_PURCHASES: PurchaseItem[] = [
-  {
-    id: "1",
-    orderId: "dream-001",
-    date: new Date(2026, 4, 1),
-    dreamTitle: "하늘을 나는 고래",
-    type: "image",
-    price: 2000,
-    status: "completed",
-  },
-  {
-    id: "2",
-    orderId: "dream-002",
-    date: new Date(2026, 4, 3),
-    dreamTitle: "끝없는 미로 속 거울방",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-  {
-    id: "3",
-    orderId: "dream-003",
-    date: new Date(2026, 3, 28),
-    dreamTitle: "빛나는 숲에서의 산책",
-    type: "image",
-    price: 2000,
-    status: "completed",
-  },
-  {
-    id: "4",
-    orderId: "dream-004",
-    date: new Date(2026, 3, 15),
-    dreamTitle: "깊은 바다 속 도시",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-  {
-    id: "5",
-    orderId: "dream-005",
-    date: new Date(2026, 4, 3),
-    dreamTitle: "별이 쏟아지는 밤하늘",
-    type: "image",
-    price: 2000,
-    status: "pending",
-  },
-  {
-    id: "6",
-    orderId: "dream-006",
-    date: new Date(2026, 3, 20),
-    dreamTitle: "잃어버린 열쇠를 찾는 꿈",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-  {
-    id: "7",
-    orderId: "dream-007",
-    date: new Date(2026, 3, 10),
-    dreamTitle: "구름 위를 걷는 아이",
-    type: "image",
-    price: 2000,
-    status: "completed",
-  },
-  {
-    id: "8",
-    orderId: "dream-008",
-    date: new Date(2026, 3, 5),
-    dreamTitle: "낯선 도시에서 길을 잃다",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-  {
-    id: "9",
-    orderId: "dream-009",
-    date: new Date(2026, 2, 25),
-    dreamTitle: "이가 빠지는 꿈",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-  {
-    id: "10",
-    orderId: "dream-010",
-    date: new Date(2026, 2, 18),
-    dreamTitle: "시험 시간에 늦는 꿈",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-  {
-    id: "11",
-    orderId: "dream-011",
-    date: new Date(2026, 2, 12),
-    dreamTitle: "거대한 파도와 마주하다",
-    type: "image",
-    price: 2000,
-    status: "completed",
-  },
-  {
-    id: "12",
-    orderId: "dream-012",
-    date: new Date(2026, 2, 3),
-    dreamTitle: "오래된 집을 다시 방문하는 꿈",
-    type: "text",
-    price: 1500,
-    status: "completed",
-  },
-];
+// DUMMY_PURCHASES 제거됨
 
 /**
  * 구글 공식 "G" 로고 SVG (소형)
@@ -207,6 +98,9 @@ const MyPageContent = ({
   provider,
 }: MyPageContentProps) => {
   const router = useRouter();
+  const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   // 캘린더에 현재 표시 중인 월 (월 이동 시 구매 내역 필터 기준)
   const [displayedMonth, setDisplayedMonth] = useState<Date>(new Date());
   // 특정 날짜 선택 (null이면 월 전체 표시)
@@ -219,8 +113,48 @@ const MyPageContent = ({
   // 더보기 페이지네이션: 초기 ITEMS_PER_PAGE개만 표시
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
+  // 데이터 페칭
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("/api/orders/me");
+        if (!res.ok) throw new Error("Failed to fetch orders");
+        const { orders } = await res.json();
+        
+        interface OrderResponse {
+          id: string;
+          order_number: string;
+          created_at: string;
+          total_amount: number;
+          dreams: {
+            status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
+            dream_content: string;
+          }[];
+        }
+
+        const mapped: PurchaseItem[] = (orders as OrderResponse[]).map((o) => ({
+          id: o.id,
+          orderId: o.order_number,
+          date: new Date(o.created_at),
+          dreamTitle: o.dreams[0]?.dream_content?.slice(0, 20) + "..." || "제목 없음",
+          type: o.total_amount > 1500 ? "image" : "text",
+          price: o.total_amount,
+          status: o.dreams[0]?.status || "PENDING",
+        }));
+        
+        setPurchases(mapped);
+      } catch (err) {
+        console.error("Order fetch error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
   // 해몽이 이뤄진 날짜 목록 (구매 내역에서 추출)
-  const dreamDates = DUMMY_PURCHASES.map((p) => p.date);
+  const dreamDates = purchases.map((p) => p.date);
 
   /**
    * 구매 내역 필터링 로직
@@ -228,8 +162,8 @@ const MyPageContent = ({
    * - 날짜 미선택 시: 현재 캘린더에 표시된 월의 전체 내역 표시
    */
   const filteredPurchases = selectedDate
-    ? DUMMY_PURCHASES.filter((p) => isSameDay(p.date, selectedDate))
-    : DUMMY_PURCHASES.filter(
+    ? purchases.filter((p) => isSameDay(p.date, selectedDate))
+    : purchases.filter(
         (p) =>
           p.date.getFullYear() === displayedMonth.getFullYear() &&
           p.date.getMonth() === displayedMonth.getMonth()
@@ -354,6 +288,17 @@ const MyPageContent = ({
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[60vh] bg-[#FDFBF7]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium animate-pulse">정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 relative bg-[#FDFBF7] overflow-hidden">
@@ -480,21 +425,21 @@ const MyPageContent = ({
             <div className="flex items-center justify-around w-full">
               <div className="text-center">
                 <p className="text-xl font-bold text-slate-800">
-                  {DUMMY_PURCHASES.length}
+                  {purchases.length}
                 </p>
                 <p className="text-xs text-slate-400">총 해몽</p>
               </div>
               <div className="h-8 w-px bg-slate-200/60" />
               <div className="text-center">
                 <p className="text-xl font-bold text-slate-800">
-                  {DUMMY_PURCHASES.filter((p) => p.status === "completed").length}
+                  {purchases.filter((p) => p.status === "COMPLETED").length}
                 </p>
                 <p className="text-xs text-slate-400">완료</p>
               </div>
               <div className="h-8 w-px bg-slate-200/60" />
               <div className="text-center">
                 <p className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">
-                  {DUMMY_PURCHASES.reduce((sum, p) => sum + p.price, 0).toLocaleString()}원
+                  {purchases.reduce((sum, p) => sum + p.price, 0).toLocaleString()}원
                 </p>
                 <p className="text-xs text-slate-400">총 결제</p>
               </div>
@@ -677,12 +622,18 @@ const MyPageContent = ({
                             </span>
                             <span
                               className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${
-                                purchase.status === "completed"
+                                purchase.status === "COMPLETED"
                                   ? "bg-green-50 text-green-500"
-                                  : "bg-amber-50 text-amber-500"
+                                  : purchase.status === "FAILED"
+                                  ? "bg-red-50 text-red-500"
+                                  : "bg-amber-50 text-amber-500 animate-pulse"
                               }`}
                             >
-                              {purchase.status === "completed" ? "완료" : "진행 중"}
+                              {purchase.status === "COMPLETED" 
+                                ? "분석 완료" 
+                                : purchase.status === "FAILED"
+                                ? "분석 실패"
+                                : "AI 분석 중..."}
                             </span>
                           </div>
                         </div>
