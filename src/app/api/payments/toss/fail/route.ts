@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendTelegramMessage } from "@/lib/telegram";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,6 +15,10 @@ export async function GET(request: Request) {
         p_order_number: orderId,
         p_status: "FAILED"
       });
+
+      // 실패 알림 전송
+      const notifyMsg = `❌ [결제 실패]\n- 주문번호: ${orderId}\n- 에러 코드: ${code}\n- 에러 메시지: ${message || "알 수 없음"}`;
+      await sendTelegramMessage(notifyMsg);
     } catch (err) {
       console.error("Failed to update order status on fail:", err);
     }

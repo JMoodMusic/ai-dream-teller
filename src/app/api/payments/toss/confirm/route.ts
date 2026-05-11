@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { after } from "next/server";
+import { sendTelegramMessage } from "@/lib/telegram";
+import { processAIGeneration } from "@/lib/ai/gemini";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +16,8 @@ export async function POST(request: Request) {
       order_number: string;
       total_amount: number;
       status: string;
+      profile_id?: string;
+      guest_id?: string;
     }
 
     // 1. DB 주문 내역 조회 및 금액 교차 검증
@@ -80,7 +85,28 @@ export async function POST(request: Request) {
       p_payment_key: paymentKey
     });
 
-    // TODO: AI 분석 비동기 트리거 호출 (이후 AI파트에서 연동)
+    // 4. 결제 성공 알림 전송을 위한 정보 조회
+    const { data: dream } = await supabase
+      .from("dreams")
+      .select("dream_content")
+      .eq("order_id", typedOrder.id)
+      .single();
+
+    const dreamSnippet = dream?.dream_content 
+      ? (dream.dream_content.length > 20 ? dream.dream_content.substring(0, 20) + "..." : dream.dream_content)
+      : "내용 없음";
+    const productType = typedOrder.total_amount > 1500 ? "텍스트 + 이미지" : "텍스트";
+    const userId = typedOrder.profile_id || typedOrder.guest_id || "알 수 없음";
+
+    const message = `✅ [결제 승인 완료]\n- 상품: AI 해몽 (${productType})\n- 유저: ${userId}\n- 금액: ${typedOrder.total_amount}원\n- 꿈 내용: ${dreamSnippet}`;
+    await sendTelegramMessage(message);
+
+    // 5. AI 분석 비동기 트리거 호출
+    after(() => {
+      processAIGeneration(typedOrder.id, dream?.dream_content || "", typedOrder.total_amount > 1500).catch(err => {
+        console.error("Background AI processing error:", err);
+      });
+    });
     
     return NextResponse.json(data, { status: 200 });
   } catch (error: unknown) {
