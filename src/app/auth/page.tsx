@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import LoginForm from "./login-form";
 
 export const metadata: Metadata = {
@@ -90,19 +91,19 @@ const AuthPage = () => {
           {/* 하단 안내 문구 */}
           <p className="text-center text-xs text-slate-400 leading-relaxed">
             로그인 시{" "}
-            <a
+            <Link
               href="/terms"
               className="underline underline-offset-2 hover:text-purple-500 transition-colors"
             >
               이용약관
-            </a>
+            </Link>
             {" "}및{" "}
-            <a
+            <Link
               href="/privacy"
               className="underline underline-offset-2 hover:text-purple-500 transition-colors"
             >
               개인정보처리방침
-            </a>
+            </Link>
             에 동의하는 것으로 간주됩니다.
           </p>
 
@@ -110,7 +111,7 @@ const AuthPage = () => {
           <div className="w-full border-t border-slate-200/60" />
 
           {/* 메인 페이지 복귀 링크 */}
-          <a
+          <Link
             href="/"
             className="flex items-center justify-center gap-1.5 text-sm text-slate-400 hover:text-purple-500 transition-colors group"
           >
@@ -129,7 +130,7 @@ const AuthPage = () => {
               <path d="m12 19-7-7 7-7" />
             </svg>
             메인 페이지로 돌아가기
-          </a>
+          </Link>
         </div>
 
         {/* 하단 장식 - 테마 컬러 사용 */}

@@ -24,11 +24,13 @@ function PaymentsContent() {
 
   useEffect(() => {
     // Hydration 에러 방지를 위해 클라이언트 마운트 후 랜덤 값 할당
-    setCustomerKey("customer_" + Math.random().toString(36).substring(2, 10));
-    // orderId는 결제 버튼 클릭 시 서버에서 발급받습니다.
-    
-    const today = new Date();
-    setFormattedDate(`${today.getFullYear()}. ${today.getMonth() + 1}. ${today.getDate()}.`);
+    setTimeout(() => {
+      setCustomerKey("customer_" + Math.random().toString(36).substring(2, 10));
+      // orderId는 결제 버튼 클릭 시 서버에서 발급받습니다.
+      
+      const today = new Date();
+      setFormattedDate(`${today.getFullYear()}. ${today.getMonth() + 1}. ${today.getDate()}.`);
+    }, 0);
   }, []);
 
   useEffect(() => {
@@ -62,9 +64,9 @@ function PaymentsContent() {
         ]);
         
         setIsReady(true);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // React 18 StrictMode 렌더링 두번 실행으로 인한 '취소되었습니다' 에러 무시
-        if (error.name === "UserCancelError" || error.message?.includes("취소")) {
+        if (error instanceof Error && (error.name === "UserCancelError" || error.message?.includes("취소"))) {
           return;
         }
         console.error("위젯 렌더링 중 오류:", error);
@@ -122,16 +124,20 @@ function PaymentsContent() {
         successUrl: window.location.origin + "/payments/success",
         failUrl: window.location.origin + "/payments/fail",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.name === "UserCancelError" || err.message?.includes("취소")) {
-        return;
-      }
-      
-      if (!window.navigator.onLine || err.name === "NetworkError" || err.message?.includes("Network")) {
-        setPaymentError("인터넷 연결이 불안정합니다. 네트워크 상태를 확인하고 다시 시도해주세요.");
+      if (err instanceof Error) {
+        if (err.name === "UserCancelError" || err.message?.includes("취소")) {
+          return;
+        }
+        
+        if (!window.navigator.onLine || err.name === "NetworkError" || err.message?.includes("Network")) {
+          setPaymentError("인터넷 연결이 불안정합니다. 네트워크 상태를 확인하고 다시 시도해주세요.");
+        } else {
+          setPaymentError("결제 요청 중 오류가 발생했습니다: " + err.message);
+        }
       } else {
-        setPaymentError("결제 요청 중 오류가 발생했습니다: " + (err.message || "알 수 없는 오류"));
+        setPaymentError("결제 요청 중 알 수 없는 오류가 발생했습니다.");
       }
     }
   };

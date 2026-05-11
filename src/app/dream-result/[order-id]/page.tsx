@@ -54,8 +54,12 @@ export default function DreamResultPage() {
           isPublic: dream.is_public,
         });
         setIsOwner(ownerFlag);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -75,8 +79,8 @@ export default function DreamResultPage() {
   };
 
   const handleKakaoShare = () => {
-    if (typeof window !== "undefined" && (window as any).Kakao) {
-      const Kakao = (window as any).Kakao;
+    if (typeof window !== "undefined" && "Kakao" in window) {
+      const Kakao = (window as unknown as { Kakao: { isInitialized: () => boolean, init: (key: string) => void, Share: { sendDefault: (params: object) => void } } }).Kakao;
       if (!Kakao.isInitialized()) {
         Kakao.init(process.env.NEXT_PUBLIC_KAKAO_APP_KEY || "");
       }

@@ -23,7 +23,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-slate-800 mb-2">제1조 (목적)</h2>
             <p>
-              본 약관은 AI Dream Teller(이하 "회사")가 제공하는 꿈 해몽 및 관련 제반 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+              본 약관은 AI Dream Teller(이하 &quot;회사&quot;)가 제공하는 꿈 해몽 및 관련 제반 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </section>
 
@@ -37,7 +37,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-slate-800 mb-2">제3조 (이용계약 체결)</h2>
             <p>
-              ① 이용계약은 회원이 되고자 하는 자(이하 "가입신청자")가 약관의 내용에 대하여 동의를 한 다음 회원가입신청을 하고 회사가 이러한 신청에 대하여 승낙함으로써 체결됩니다.
+              ① 이용계약은 회원이 되고자 하는 자(이하 &quot;가입신청자&quot;)가 약관의 내용에 대하여 동의를 한 다음 회원가입신청을 하고 회사가 이러한 신청에 대하여 승낙함으로써 체결됩니다.
               <br />
               ② 비회원의 경우, 서비스를 결제하고 이용하는 순간 본 약관에 동의한 것으로 간주합니다.
             </p>

@@ -36,8 +36,8 @@ export async function GET() {
     if (ordersError) throw ordersError;
 
     return NextResponse.json({ orders }, { status: 200 });
-  } catch (error: any) {
-    console.error("Fetch orders error:", error);
+  } catch (error: unknown) {
+    console.error("Order history fetch error:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

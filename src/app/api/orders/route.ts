@@ -107,8 +107,8 @@ export async function POST(request: Request) {
       orderName: `AI 꿈 해몽 (${expertStyle})${includeImage ? " + 이미지" : ""}`,
       customerEmail: user?.email || "",
     }, { status: 200 });
-  } catch (error: any) {
-    console.error("Order creation error:", error);
+  } catch (error: unknown) {
+    console.error("Order Creation Error:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

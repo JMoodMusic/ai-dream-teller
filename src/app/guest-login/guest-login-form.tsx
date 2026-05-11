@@ -35,8 +35,12 @@ const GuestLoginForm = () => {
       // 성공 시 비회원 주문조회 페이지로 이동
       router.push("/guest-check");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     } finally {
       setIsLoading(false);
     }

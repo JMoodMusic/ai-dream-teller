@@ -214,7 +214,7 @@ const MyPageContent = ({
       setNickname(trimmed);
       setIsEditingNickname(false);
       router.refresh(); // 변경된 정보 반영을 위해 서버 컴포넌트 갱신 유도
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("닉네임 수정 실패:", error);
       setNicknameError("저장 중 오류가 발생했습니다. 다시 시도해주세요.");
     }

@@ -46,12 +46,14 @@ export default function DreamTellerPage() {
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        if (parsed.selectedExpert) setSelectedExpert(parsed.selectedExpert);
-        if (parsed.dreamContent) setDreamContent(parsed.dreamContent);
-        if (parsed.withImage !== undefined) setWithImage(parsed.withImage);
-        if (parsed.accordionValue) setAccordionValue(parsed.accordionValue);
-        if (parsed.guestPhone) setGuestPhone(parsed.guestPhone);
-        if (parsed.guestPassword) setGuestPassword(parsed.guestPassword);
+        setTimeout(() => {
+          if (parsed.selectedExpert) setSelectedExpert(parsed.selectedExpert);
+          if (parsed.dreamContent) setDreamContent(parsed.dreamContent);
+          if (parsed.withImage !== undefined) setWithImage(parsed.withImage);
+          if (parsed.accordionValue) setAccordionValue(parsed.accordionValue);
+          if (parsed.guestPhone) setGuestPhone(parsed.guestPhone);
+          if (parsed.guestPassword) setGuestPassword(parsed.guestPassword);
+        }, 0);
       } catch (e) {
         console.error("Failed to parse saved state", e);
       }

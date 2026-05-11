@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         <div className="space-y-6 text-slate-600 leading-relaxed text-sm sm:text-base">
           <section>
             <p>
-              AI Dream Teller (이하 "회사")는 사용자의 개인정보를 중요하게 생각하며, "정보통신망 이용촉진 및 정보보호 등에 관한 법률" 및 "개인정보보호법"을 준수하고 있습니다.
+              AI Dream Teller (이하 &quot;회사&quot;)는 사용자의 개인정보를 중요하게 생각하며, &quot;정보통신망 이용촉진 및 정보보호 등에 관한 법률&quot; 및 &quot;개인정보보호법&quot;을 준수하고 있습니다.
             </p>
           </section>
 

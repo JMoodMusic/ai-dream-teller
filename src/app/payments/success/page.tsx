@@ -59,7 +59,8 @@ function SuccessContent() {
           setStatus("error");
           setErrorMessage(data.message || "결제 승인 중 오류가 발생했습니다.");
         }
-      } catch (error) {
+      } catch (error: unknown) {
+        console.error("결제 승인 통신 에러:", error);
         setStatus("error");
         setErrorMessage("서버와 통신 중 오류가 발생했습니다.");
       }

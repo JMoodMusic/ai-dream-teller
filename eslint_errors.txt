@@ -1,0 +1,96 @@
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/scratch/test-e2e-payments.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/api/orders/me/route.ts
+  39:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/api/orders/route.ts
+    7:36  warning  'authError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  110:19  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/api/payments/toss/confirm/route.ts
+  86:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/auth/page.tsx
+  113:11  error  Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/dream-result/[order-id]/page.tsx
+   7:10  warning  'Calendar' is defined but never used          @typescript-eslint/no-unused-vars
+  30:10  warning  'isOwner' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  57:21  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  78:53  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  79:32  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/dream-teller/page.tsx
+  36:16  warning  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  49:36  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/dream-teller/page.tsx:49:36
+  47 |       try {
+  48 |         const parsed = JSON.parse(savedState);
+> 49 |         if (parsed.selectedExpert) setSelectedExpert(parsed.selectedExpert);
+     |                                    ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  50 |         if (parsed.dreamContent) setDreamContent(parsed.dreamContent);
+  51 |         if (parsed.withImage !== undefined) setWithImage(parsed.withImage);
+  52 |         if (parsed.accordionValue) setAccordionValue(parsed.accordionValue);  react-hooks/set-state-in-effect
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/guest-login/guest-login-form.tsx
+  38:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/guest-login/page.tsx
+  67:13  error  Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/my-page/my-page-content.tsx
+  217:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/payments/page.tsx
+   27:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/payments/page.tsx:27:5
+  25 |   useEffect(() => {
+  26 |     // Hydration 에러 방지를 위해 클라이언트 마운트 후 랜덤 값 할당
+> 27 |     setCustomerKey("customer_" + Math.random().toString(36).substring(2, 10));
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |     // orderId는 결제 버튼 클릭 시 서버에서 발급받습니다.
+  29 |     
+  30 |     const today = new Date();  react-hooks/set-state-in-effect
+   65:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-explicit-any
+  125:19  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-explicit-any
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/payments/success/page.tsx
+  62:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/privacy/page.tsx
+  25:35   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:38   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:64   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:91   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:95   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:103  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/app/terms/page.tsx
+  26:40  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  26:43  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  26:72  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  26:76  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  40:39  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  40:45  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/Users/jijeongsu/Desktop/Antigravity/ai-dream-teller/src/components/layout/header.tsx
+  3:10  warning  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 33 problems (27 errors, 6 warnings)
+

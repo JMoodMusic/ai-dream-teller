@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import GuestLoginForm from "./guest-login-form";
 
 export const metadata: Metadata = {
@@ -64,7 +65,7 @@ const GuestLoginPage = () => {
 
           {/* 메인 페이지 복귀 링크 */}
           <div className="pt-4 flex justify-center">
-            <a
+            <Link
               href="/"
               className="flex items-center justify-center gap-1.5 text-sm text-slate-400 hover:text-purple-500 transition-colors group"
             >
@@ -83,7 +84,7 @@ const GuestLoginPage = () => {
                 <path d="m12 19-7-7 7-7" />
               </svg>
               메인 페이지로 돌아가기
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -95,12 +96,12 @@ const GuestLoginPage = () => {
           </span>
           을 누려보세요 ✨
           <br />
-          <a
+          <Link
             href="/auth"
             className="inline-block mt-2 font-medium text-slate-600 hover:text-purple-500 underline underline-offset-4 transition-colors"
           >
-            소셜 로그인하러 가기
-          </a>
+            로그인 / 회원가입
+          </Link>
         </p>
       </div>
     </div>

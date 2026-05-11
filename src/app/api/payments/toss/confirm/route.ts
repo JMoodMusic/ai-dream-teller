@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     // TODO: AI 분석 비동기 트리거 호출 (이후 AI파트에서 연동)
     
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Payment confirm error:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
