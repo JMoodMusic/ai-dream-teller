@@ -45,7 +45,7 @@ export async function processAIGeneration(orderId: string, dreamContent: string,
     const imageUrl = includeImage ? "https://picsum.photos/800/600" : null;
 
     // Supabase DB 업데이트
-    const { error: updateError } = await supabase
+    const { error: updateError, data: updatedData } = await supabase
       .from("dreams")
       .update({
         ai_analysis: aiAnalysis,
@@ -53,14 +53,20 @@ export async function processAIGeneration(orderId: string, dreamContent: string,
         status: "COMPLETED",
         updated_at: new Date().toISOString(),
       })
-      .eq("order_id", orderId);
+      .eq("order_id", orderId)
+      .select();
 
     if (updateError) {
       throw updateError;
     }
 
-    // 텔레그램 성공 알림 전송
-    await sendTelegramMessage(`✨ [AI 해몽 완료]\n- 주문번호: ${orderId}\n- 상태: COMPLETED`);
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(`DB 업데이트 실패: order_id(${orderId})에 해당하는 꿈 데이터가 없거나 RLS 권한 문제로 수정되지 않았습니다. (Service Role Key 필요)`);
+    }
+
+    // 텔레그램 성공 알림 전송 (너무 길 수 있으므로 50자 이내로 자름)
+    const previewText = aiAnalysis.length > 50 ? aiAnalysis.slice(0, 50) + "..." : aiAnalysis;
+    await sendTelegramMessage(`✨ [AI 해몽 완료]\n- 주문번호: ${orderId}\n- 상태: COMPLETED\n- 해몽 결과 미리보기:\n${previewText}`);
 
   } catch (error: unknown) {
     console.error("AI Generation Error:", error);
