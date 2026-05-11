@@ -199,11 +199,17 @@ Supabase Auth와 연동하여 인증 및 확장된 유저 정보를 관리합니
 
 ### 6.5. Orders & Payments (`/api/orders`, `/api/payments`)
 
-주문서 생성 및 결제 웹훅 처리를 담당합니다.
+주문서 생성, 결제 승인, 결제 실패 및 비동기 웹훅 처리를 포함한 결제 서버 로직 전반을 담당합니다. 클라이언트의 가격 조작을 방지하고 회원/비회원 결제를 모두 안전하게 처리합니다.
 
-- `POST /api/orders` : 결제 전 주문 정보(텍스트 기본/이미지 추가 등) 생성
-- `GET /api/orders/me` : 유저의 전체 주문/결제 내역 조회 (마이페이지 캘린더 및 리스트용, 토큰 기반)
-- `POST /api/payments/toss/confirm` : Toss Payments 결제 승인 요청 및 서버 상태(결제 완료) 업데이트 Webhook
+- `POST /api/orders` : 결제 전 주문 정보 생성 (가주문 생성)
+  - **보안/검증**: 클라이언트가 전송한 결제 금액을 신뢰하지 않고, 서버에서 직접 옵션(텍스트 기본/이미지 추가 등)을 기반으로 최종 결제 금액을 계산 및 검증하여 DB에 저장합니다.
+  - **비회원 연동**: 비회원의 경우 결제 전 입력한 정보(전화번호, 비밀번호 등)를 바탕으로 `guests` 테이블에 레코드를 생성하거나 식별하여 `guest_id`를 매핑합니다.
+- `GET /api/orders/[id]` : 특정 주문 단건 상세 조회 (주문 상태 유효성, 결제 금액 등 확인용)
+- `GET /api/orders/me` : 현재 세션(회원 토큰 또는 비회원 로그인 세션)을 기반으로 전체 주문/결제 내역 조회 (마이페이지 캘린더 및 비회원 주문 내역 조회용)
+- `POST /api/payments/toss/confirm` : Toss Payments 결제 승인 요청 및 서버 상태(`SUCCESS`) 업데이트
+  - **금액 교차 검증**: 결제 승인 요청 전후로 실제 DB의 주문 금액과 토스페이먼츠 측 결제 금액이 일치하는지 재검증하여 위변조를 완벽히 차단합니다.
+- `GET /api/payments/toss/fail` : 사용자의 결제 취소, 잔액 부족 등 결제창 이탈 및 실패 시 호출되어 해당 주문 상태를 `FAILED`로 안전하게 업데이트합니다.
+- `POST /api/payments/toss/webhook` : 토스페이먼츠 비동기 상태 변경(가상계좌 입금 확인, 결제 취소 등)에 대응하기 위한 웹훅 수신 엔드포인트입니다.
 
 ### 6.6. Admin (`/api/admin`)
 
@@ -322,7 +328,12 @@ Supabase의 기본 `auth.users` 테이블과 1:1로 연결되는 확장 프로�
 | | LLM 프롬프트 한계 | 유저의 꿈 내용이 토큰 한도를 초과하는 10만 자 이상의 텍스트 | 413 Payload Too Large 또는 400 Bad Request 에러 반환 | ⬜ 대기 | |
 | **Dreams**<br/>`/api/dreams` | 접근 권한 (RLS) | `is_public=false`인 타인의 꿈 해몽 결과에 ID로 접근 시도 | 403 Forbidden 또는 404 Not Found (Row Level Security 작동) | ⬜ 대기 | |
 | | 비정상 ID | UUID 포맷이 아닌 임의의 문자열로 상세 조회 요청 | 400 Bad Request 또는 404 Not Found | ⬜ 대기 | |
-| **Orders & Payments**<br/>`/api/orders`<br/>`/api/payments` | 비정상 금액 | `total_amount`를 클라이언트에서 0원 또는 음수로 조작하여 주문 생성 | 서버 측 검증에서 가격 불일치 차단 (400 Bad Request) | ⬜ 대기 | |
-| | 결제 검증 (Webhook) | 토스 API 응답의 결제 금액과 DB에 저장된 주문 금액 불일치 | 결제 승인 실패 처리 및 위변조 경고 로깅 (400 Bad Request) | ⬜ 대기 | |
-| | 중복 결제 승인 | 이미 `SUCCESS` 처리된 주문건에 대해 다시 `confirm` 요청 | 이미 처리된 건으로 응답하며 DB 중복 업데이트 방지 | ⬜ 대기 | |
+| **Orders & Payments**<br/>`/api/orders`<br/>`/api/payments` | 비정상 금액 | `total_amount`를 클라이언트에서 0원 또는 음수로 조작하여 주문 생성 | 서버 측 검증에서 가격 불일치 차단 (400 Bad Request) | ✅ 완료 | **[검증 완료]** 프론트엔드가 전송한 금액 데이터를 무시하고 서버가 옵션(includeImage 등)을 기반으로 금액을 1500으로 직접 계산하여 저장함 |
+| | 결제 검증 (Webhook) | 토스 API 응답의 결제 금액과 DB에 저장된 주문 금액 불일치 | 결제 승인 실패 처리 및 위변조 경고 로깅 (400 Bad Request) | ✅ 완료 | **[검증 완료]** `confirm` API 호출 시 클라이언트 전달 금액과 DB 원본 금액 불일치 시 "Amount mismatch" 차단 확인 |
+| | 중복 결제 승인 | 이미 `SUCCESS` 처리된 주문건에 대해 다시 `confirm` 요청 | 이미 처리된 건으로 응답하며 DB 중복 업데이트 방지 | ✅ 완료 | **[검증 완료]** DB 상태가 SUCCESS인 경우 토스페이먼츠 승인 로직에 도달하기 전 400 (Already processed) 반환 확인 |
+| | 비회원 인증 실패 | 기존 저장된 비회원 전화번호로 틀린 비밀번호 입력하여 주문 생성 시도 | 401 Unauthorized 반환 및 주문(가주문) 생성 차단 | ✅ 완료 | **[검증 완료]** `get_guest_by_phone` RPC로 조회 후 비밀번호 불일치 시 즉각 401 (비회원 비밀번호가 일치하지 않습니다) 반환 확인 |
+| | 타인 주문 접근 (RLS) | 다른 사용자의 `order_id`를 임의로 조작하여 조회/결제 시도 | 403 Forbidden 또는 404 Not Found 반환 | ✅ 완료 | **[검증 완료]** Security Definer 적용으로 외부의 무작위 조회는 불가능하며, 일치하지 않는 order_id 전달 시 404 (Order not found) 반환 확인 |
+| | 결제 실패 업데이트 | 결제창 이탈 또는 실패로 `/api/payments/toss/fail` 호출 시 | DB의 해당 `order_id` 상태가 `FAILED`로 정상 변경됨 | ✅ 완료 | **[검증 완료]** 실패 라우트 호출 시 RPC 함수에 의해 DB 상태가 FAILED로 즉시 변경되는 로직 검증 완료 |
+| | 가주문 유효성 검증 | 취소되거나 만료된(`FAILED`) 상태의 `order_id`로 결제 승인 시도 | 400 Bad Request 에러 반환 및 토스 승인 요청 차단 | ✅ 완료 | **[코드 개선 및 검증 완료]** `confirm` API 내부에 `order.status === 'FAILED'` 일 경우 400 리턴하는 차단 방어막 추가하여 토스 서버 호출 차단 |
+| | 웹훅 위변조 방어 | 토스페이먼츠 공식망이 아닌 외부에서 임의의 페이로드로 웹훅 호출 | 서명 검증/잘못된 orderId 필터링을 통해 상태 변경 무시 | ✅ 완료 | **[검증 완료]** 등록된 상태값 이외의 페이로드 무시 및 없는 orderId 전달 시 RPC 내부에서 update skip 처리됨 확인 |
 | **Admin**<br/>`/api/admin` | 어드민 권한 제어 | 일반 User 또는 Guest 권한의 토큰으로 관리자 API 호출 시도 | 403 Forbidden | ⬜ 대기 | |

@@ -175,23 +175,7 @@ export default function DreamTellerPage() {
       </div>
 
       <main className="relative z-10 w-full max-w-3xl mx-auto px-4 pt-16 sm:px-6">
-        {/* Dev Tools Toggle */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="fixed top-24 right-4 z-50 bg-slate-900 text-white p-3 rounded-xl shadow-2xl flex flex-col gap-2 border border-slate-700">
-            <span className="text-xs font-bold text-yellow-400">DEV TOOLS</span>
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor="dev-auth" className="text-sm font-medium cursor-pointer">
-                {isAuthenticated ? "회원 모드" : "비회원 모드"}
-              </label>
-              <Checkbox 
-                id="dev-auth"
-                checked={isAuthenticated === true}
-                onCheckedChange={(c) => setIsAuthenticated(c === true)}
-                className="bg-slate-800 border-slate-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-              />
-            </div>
-          </div>
-        )}
+
 
         {/* Header Section */}
         <motion.div

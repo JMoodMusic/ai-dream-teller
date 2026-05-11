@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -15,6 +16,19 @@ function SuccessContent() {
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [countdown, setCountdown] = useState(3);
+  const [redirectPath, setRedirectPath] = useState<string>("/my-page");
+  const [redirectText, setRedirectText] = useState<string>("마이페이지");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setRedirectPath("/guest-login");
+        setRedirectText("비회원 주문조회");
+      }
+    });
+  }, []);
 
   useEffect(() => {
     async function confirmPayment() {
@@ -25,7 +39,7 @@ function SuccessContent() {
       }
 
       try {
-        const response = await fetch("/api/payments/confirm", {
+        const response = await fetch("/api/payments/toss/confirm", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -53,6 +67,23 @@ function SuccessContent() {
 
     confirmPayment();
   }, [paymentKey, orderId, amount]);
+
+  useEffect(() => {
+    if (status === "success") {
+      const timer = setInterval(() => {
+        setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+
+      const redirectTimer = setTimeout(() => {
+        router.push(redirectPath);
+      }, 3000);
+
+      return () => {
+        clearInterval(timer);
+        clearTimeout(redirectTimer);
+      };
+    }
+  }, [status, router, redirectPath]);
 
   if (status === "loading") {
     return (
@@ -100,12 +131,25 @@ function SuccessContent() {
           </div>
         </div>
 
-        <Button 
-          onClick={() => router.push(`/dream-result/${orderId}`)}
-          className="w-full h-14 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-lg border-0 shadow-md hover:shadow-lg transition-all"
-        >
-          나의 꿈 해몽 결과 확인하기
-        </Button>
+        <p className="text-xs text-slate-400 mt-4">
+          {countdown}초 후 {redirectText}로 자동으로 이동합니다...
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          <Button 
+            onClick={() => router.push(`/dream-result/${orderId}`)}
+            className="w-full h-14 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-lg border-0 shadow-md hover:shadow-lg transition-all"
+          >
+            나의 꿈 해몽 결과 확인하기
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => router.push(redirectPath)}
+            className="w-full h-12 rounded-xl border-slate-200 text-slate-600 font-medium"
+          >
+            {redirectText}로 바로가기
+          </Button>
+        </div>
       </div>
     </div>
   );

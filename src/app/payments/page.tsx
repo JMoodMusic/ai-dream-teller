@@ -25,7 +25,7 @@ function PaymentsContent() {
   useEffect(() => {
     // Hydration 에러 방지를 위해 클라이언트 마운트 후 랜덤 값 할당
     setCustomerKey("customer_" + Math.random().toString(36).substring(2, 10));
-    setOrderId("dream_test_" + Math.random().toString(36).substring(2, 10));
+    // orderId는 결제 버튼 클릭 시 서버에서 발급받습니다.
     
     const today = new Date();
     setFormattedDate(`${today.getFullYear()}. ${today.getMonth() + 1}. ${today.getDate()}.`);
@@ -75,11 +75,48 @@ function PaymentsContent() {
 
   const handlePayment = async () => {
     try {
-      setPaymentError(null); // 에러 초기화
+      setPaymentError(null);
       if (!widgets) return;
+
+      // 1. 세션 스토리지에서 꿈 정보 가져오기
+      const savedState = sessionStorage.getItem("dreamTellerState");
+      if (!savedState) {
+        setPaymentError("입력된 꿈 정보가 없습니다. 이전 페이지로 돌아가 다시 시도해주세요.");
+        return;
+      }
+
+      const { selectedExpert, dreamContent, withImage, guestPhone, guestPassword } = JSON.parse(savedState);
+
+      // 2. 서버에 가주문 생성 요청
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expertStyle: selectedExpert,
+          dreamContent,
+          includeImage: withImage,
+          guestPhone,
+          guestPassword
+        })
+      });
+
+      if (!orderRes.ok) {
+        const errorData = await orderRes.json();
+        throw new Error(errorData.message || "주문 생성에 실패했습니다.");
+      }
+
+      const { orderId: serverOrderId, amount: serverAmount, orderName } = await orderRes.json();
+      setOrderId(serverOrderId); // 로컬 상태 업데이트 (표시용)
+
+      // 금액 변조 여부 더블체크 (프론트 표시 금액과 서버 산출 금액)
+      if (serverAmount !== amount) {
+        throw new Error("결제 금액이 일치하지 않습니다. 다시 시도해주세요.");
+      }
+
+      // 3. 토스페이먼츠 결제창 호출 (서버에서 발급한 orderId 사용)
       await widgets.requestPayment({
-        orderId: orderId,
-        orderName: amount > 1500 ? "AI 꿈 해몽 서비스 (이미지 포함)" : "AI 꿈 해몽 서비스",
+        orderId: serverOrderId,
+        orderName: orderName,
         customerName: "테스트유저",
         customerEmail: "test@example.com",
         successUrl: window.location.origin + "/payments/success",
@@ -87,12 +124,10 @@ function PaymentsContent() {
       });
     } catch (err: any) {
       console.error(err);
-      // 사용자가 창을 닫거나 취소한 경우는 에러로 표출하지 않음
       if (err.name === "UserCancelError" || err.message?.includes("취소")) {
         return;
       }
       
-      // 오프라인 상태 또는 네트워크 에러 처리
       if (!window.navigator.onLine || err.name === "NetworkError" || err.message?.includes("Network")) {
         setPaymentError("인터넷 연결이 불안정합니다. 네트워크 상태를 확인하고 다시 시도해주세요.");
       } else {
