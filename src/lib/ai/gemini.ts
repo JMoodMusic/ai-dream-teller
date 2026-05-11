@@ -15,13 +15,31 @@ export async function processAIGeneration(orderId: string, dreamContent: string,
 결과에는 꿈의 의미, 상징, 그리고 앞으로의 조언이 포함되어야 합니다.
 
 꿈 내용: ${dreamContent}`;
+    let response;
+    let retries = 3;
+    let delay = 2000; // 초기 2초 대기
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    while (retries > 0) {
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
+        break; // 성공 시 루프 탈출
+      } catch (err: unknown) {
+        const error = err as Error;
+        if (error.message && error.message.includes("503") && retries > 1) {
+          console.warn(`[Gemini API] 503 High Demand 에러 발생. ${delay / 1000}초 후 재시도합니다... (남은 횟수: ${retries - 1})`);
+          await new Promise((res) => setTimeout(res, delay));
+          retries--;
+          delay *= 2; // 지수 백오프 (2초 -> 4초)
+        } else {
+          throw err; // 503 이외의 에러나 재시도 횟수 소진 시 에러 던지기
+        }
+      }
+    }
 
-    const aiAnalysis = response.text || "해몽 분석 결과를 생성하지 못했습니다.";
+    const aiAnalysis = response?.text || "해몽 분석 결과를 생성하지 못했습니다.";
     
     // TODO: 이미지 생성 로직 (현재는 텍스트만 처리)
     const imageUrl = includeImage ? "https://picsum.photos/800/600" : null;
