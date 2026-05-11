@@ -200,6 +200,7 @@ const KakaoLogo = () => (
  * - 구매 내역 리스트
  */
 const MyPageContent = ({
+  userId,
   email,
   nickname: initialNickname,
   avatarUrl,
@@ -255,11 +256,35 @@ const MyPageContent = ({
       return;
     }
 
-    setNicknameError(null);
-    // TODO: Supabase updateUser({ data: { nickname: trimmed } }) 연동
-    setNickname(trimmed);
-    setIsEditingNickname(false);
-  }, [nicknameInput]);
+    try {
+      setNicknameError(null);
+      const supabase = createClient();
+
+      // 1. profiles 테이블 업데이트 (실제 DB 반영)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ nickname: trimmed })
+        .eq("id", userId);
+
+      if (profileError) throw profileError;
+
+      // 2. auth.users 메타데이터 업데이트 (세션 동기화용)
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { nickname: trimmed }
+      });
+
+      if (authError) {
+        console.warn("Auth 메타데이터 갱신 실패 (프로필은 업데이트됨):", authError);
+      }
+
+      setNickname(trimmed);
+      setIsEditingNickname(false);
+      router.refresh(); // 변경된 정보 반영을 위해 서버 컴포넌트 갱신 유도
+    } catch (error: any) {
+      console.error("닉네임 수정 실패:", error);
+      setNicknameError("저장 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  }, [nicknameInput, userId, router]);
 
   /**
    * 닉네임 수정 취소
@@ -280,22 +305,26 @@ const MyPageContent = ({
     try {
       setIsLoggingOut(true);
 
-      // Supabase 미연동 시 바로 메인 페이지로 이동
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-      if (!supabaseUrl || supabaseUrl.startsWith("your")) {
-        router.push("/");
-        return;
-      }
+      // 1. 서버 사이드 로그아웃 실행 (API Route 호출)
+      // Route Handler 내에서 supabase.auth.signOut()을 호출하여 서버 쿠키를 확실하게 삭제합니다.
+      // fetch는 리다이렉트를 자동으로 따르지만, 여기서는 성공 여부만 확인합니다.
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+      });
 
+      // 2. 클라이언트 사이드 로그아웃 보완 (로컬 세션 및 브라우저 메모리 파기)
       const supabase = createClient();
       await supabase.auth.signOut();
-      router.push("/");
-      router.refresh();
+
+      // 3. 메인 페이지로 이동 및 상태 강제 갱신
+      // router.refresh()를 통해 서버 컴포넌트들을 다시 렌더링하도록 유도합니다.
+      window.location.href = "/";
     } catch (error) {
       console.error("로그아웃 실패:", error);
+      alert("로그아웃 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
       setIsLoggingOut(false);
     }
-  }, [router]);
+  }, []);
 
   /**
    * 소셜 서비스 로고 렌더링
