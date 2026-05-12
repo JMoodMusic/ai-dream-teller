@@ -46,6 +46,7 @@ interface PurchaseItem {
   type: "text" | "image";
   price: number;
   status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
+  imageUrl?: string | null;
 }
 
 /**
@@ -129,6 +130,7 @@ const MyPageContent = ({
           dreams: {
             status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
             dream_content: string;
+            image_url: string | null;
           }[];
         }
 
@@ -140,6 +142,7 @@ const MyPageContent = ({
           type: o.total_amount > 1500 ? "image" : "text",
           price: o.total_amount,
           status: o.dreams[0]?.status || "PENDING",
+          imageUrl: o.dreams[0]?.image_url,
         }));
         
         setPurchases(mapped);
@@ -583,17 +586,21 @@ const MyPageContent = ({
                     >
                       <Link
                         href={`/dream-result/${purchase.orderId}`}
-                        className="group flex items-center gap-4 p-4 rounded-2xl border border-slate-100/80 bg-white/40 hover:bg-white/80 hover:border-purple-200/60 hover:shadow-md transition-all"
+                        className={`group flex items-center gap-4 p-4 rounded-2xl border border-slate-100/80 bg-white/40 hover:bg-white/80 hover:border-purple-200/60 hover:shadow-md transition-all ${
+                          (purchase.status === "PENDING" || purchase.status === "PROCESSING") ? "animate-pulse border-purple-200/50 bg-purple-50/30" : ""
+                        }`}
                       >
-                        {/* 아이콘: 이미지 포함은 Sparkles, 텍스트 전용은 FileText */}
+                        {/* 아이콘/썸네일 */}
                         <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          className={`relative w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
                             purchase.type === "image"
                               ? "bg-gradient-to-br from-purple-100 to-pink-100"
                               : "bg-gradient-to-br from-slate-100 to-blue-100"
                           }`}
                         >
-                          {purchase.type === "image" ? (
+                          {purchase.imageUrl ? (
+                            <Image src={purchase.imageUrl} alt="꿈 이미지" fill className="object-cover" />
+                          ) : purchase.type === "image" ? (
                             <Sparkles className="w-5 h-5 text-pink-500" />
                           ) : (
                             <FileText className="w-5 h-5 text-blue-500" />

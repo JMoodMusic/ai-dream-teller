@@ -6,8 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Filter, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feeds/feed-card";
-import { DUMMY_FEEDS } from "@/lib/data/dummy-feeds";
-import type { ExpertStyle } from "@/lib/types/feed";
+import type { ExpertStyle, FeedItem } from "@/lib/types/feed";
 import { EXPERT_STYLE_META } from "@/lib/types/feed";
 
 /**
@@ -19,12 +18,37 @@ import { EXPERT_STYLE_META } from "@/lib/types/feed";
  */
 const FeedsClient = () => {
   const [selectedStyle, setSelectedStyle] = useState<ExpertStyle | "전체">("전체");
+  const [feeds, setFeeds] = useState<FeedItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeeds = async () => {
+      try {
+        const res = await fetch("/api/feeds");
+        if (!res.ok) throw new Error("Failed to fetch feeds");
+        const data = await res.json();
+        
+        // Convert date strings back to Date objects
+        const parsedFeeds = data.feeds.map((feed: any) => ({
+          ...feed,
+          createdAt: new Date(feed.createdAt),
+        }));
+        
+        setFeeds(parsedFeeds);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFeeds();
+  }, []);
 
   /** 필터링된 피드 목록 */
   const filteredFeeds = useMemo(() => {
-    if (selectedStyle === "전체") return DUMMY_FEEDS;
-    return DUMMY_FEEDS.filter((feed) => feed.expertStyle === selectedStyle);
-  }, [selectedStyle]);
+    if (selectedStyle === "전체") return feeds;
+    return feeds.filter((feed) => feed.expertStyle === selectedStyle);
+  }, [selectedStyle, feeds]);
 
   /** 전문가 스타일 필터 옵션 */
   const filterOptions: (ExpertStyle | "전체")[] = [
@@ -131,11 +155,21 @@ const FeedsClient = () => {
         </motion.div>
 
         {/* ─── 피드 리스트 ─── */}
-        <div className="flex flex-col gap-5">
-          {filteredFeeds.map((feed, index) => (
-            <FeedCard key={feed.id} feed={feed} index={index} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          </div>
+        ) : filteredFeeds.length > 0 ? (
+          <div className="flex flex-col gap-5">
+            {filteredFeeds.map((feed, index) => (
+              <FeedCard key={feed.id} feed={feed} index={index} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-slate-500">해당 스타일의 해몽 결과가 없습니다.</p>
+          </div>
+        )}
 
         {/* ─── 피드 하단 CTA ─── */}
         <motion.div

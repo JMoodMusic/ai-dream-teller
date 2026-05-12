@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Brain, Network, Infinity as InfinityIcon, Sparkles, Image as ImageIcon, Info, ArrowRight, Maximize2, Minimize2 } from "lucide-react";
+import { Brain, Network, Infinity as InfinityIcon, Sparkles, Image as ImageIcon, Info, ArrowLeft, ArrowRight, Maximize2, Minimize2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -176,7 +177,25 @@ export default function DreamTellerPage() {
         <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-300/20 blur-[120px] mix-blend-multiply" />
       </div>
 
-      <main className="relative z-10 w-full max-w-3xl mx-auto px-4 pt-16 sm:px-6">
+      <main className="relative z-10 w-full max-w-3xl mx-auto px-4 pt-10 sm:px-6">
+        {/* Back Button */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-6"
+        >
+          <Link href="/">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="group text-slate-500 hover:text-slate-900 hover:bg-white/50 backdrop-blur-sm rounded-full pl-2 pr-4 transition-all"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform" />
+              메인으로 돌아가기
+            </Button>
+          </Link>
+        </motion.div>
 
 
         {/* Header Section */}

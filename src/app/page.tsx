@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Brain, Image as ImageIcon, BookOpen, Zap, ArrowRight } from "lucide-react";
+import { Sparkles, Brain, Image as ImageIcon, BookOpen, Zap, ArrowRight, FileText } from "lucide-react";
+import type { FeedItem } from "@/lib/types/feed";
 
 /**
  * 메인 랜딩 페이지
@@ -12,6 +14,23 @@ import { Sparkles, Brain, Image as ImageIcon, BookOpen, Zap, ArrowRight } from "
  * - 유저 유입 → 결제 전환 퍼널: 공감 → 신뢰 → 가치 → 행동 → 소셜프루프
  */
 export default function Home() {
+  const [previewFeeds, setPreviewFeeds] = useState<FeedItem[]>([]);
+
+  useEffect(() => {
+    const fetchFeeds = async () => {
+      try {
+        const res = await fetch("/api/feeds");
+        if (res.ok) {
+          const data = await res.json();
+          // Show up to 3 items on the landing page
+          setPreviewFeeds(data.feeds.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to fetch preview feeds:", err);
+      }
+    };
+    fetchFeeds();
+  }, []);
   return (
     <div className="flex flex-col w-full bg-[#FDFBF7] text-slate-800 overflow-hidden selection:bg-purple-200">
       {/* Background Aurora Effects - 몽환적인 분위기 연출 */}
@@ -265,11 +284,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { id: 1, title: "하늘을 나는 고래", desc: "구름 위를 헤엄치는 거대한 고래를 탔습니다. 칼 융의 분석으로 내면의 자유를 향한 갈망이 드러났어요.", imageUrl: "/images/feeds/dream-whale.jpg" },
-              { id: 2, title: "끝없는 미로", desc: "거울로 이루어진 방에서 길을 잃었어요. 프로이트 분석 결과 현실에서의 선택 압박이 반영된 꿈이었습니다.", imageUrl: "/images/feeds/dream-maze.jpg" },
-              { id: 3, title: "빛나는 숲", desc: "모든 나무가 형광빛으로 빛나는 숲을 걸었습니다. 신경과학적 관점에서 창의적 에너지 상승 신호라고 하네요.", imageUrl: "/images/feeds/dream-forest.jpg" },
-            ].map((feed, idx) => (
+            {previewFeeds.length > 0 ? previewFeeds.map((feed, idx) => (
               <motion.div
                 key={feed.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -278,24 +293,35 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
               >
                 <Link href={`/dream-result/${feed.id}`} className="group block cursor-pointer">
-                  <div className="w-full aspect-[4/3] rounded-2xl border border-slate-200 mb-4 overflow-hidden relative transition-all group-hover:border-purple-300 shadow-sm group-hover:shadow-md bg-slate-100">
-                    <Image
-                      src={feed.imageUrl}
-                      alt={`${feed.title} - AI 꿈 해몽 이미지`}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      unoptimized
-                    />
+                  <div className="w-full aspect-[4/3] rounded-2xl border border-slate-200 mb-4 overflow-hidden relative transition-all group-hover:border-purple-300 shadow-sm group-hover:shadow-md bg-slate-100 flex items-center justify-center">
+                    {feed.imageUrl ? (
+                      <Image
+                        src={feed.imageUrl}
+                        alt={`${feed.dreamContent.slice(0, 20)}... - AI 꿈 해몽 이미지`}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400 group-hover:text-purple-400 transition-colors">
+                        <FileText className="w-12 h-12 mb-2 opacity-50" />
+                        <span className="text-sm font-medium">텍스트 해몽</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
-                  <h4 className="font-semibold text-lg mb-1 group-hover:text-purple-700 transition-colors text-slate-900">
-                    {feed.title}
+                  <h4 className="font-semibold text-lg mb-1 group-hover:text-purple-700 transition-colors text-slate-900 truncate">
+                    {feed.dreamContent}
                   </h4>
-                  <p className="text-slate-500 text-sm line-clamp-2">{feed.desc}</p>
+                  <p className="text-slate-500 text-sm line-clamp-2">{feed.aiAnalysisSummary}</p>
                 </Link>
               </motion.div>
-            ))}
+            )) : (
+              <div className="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-12 text-slate-400">
+                아직 공개된 해몽 내역이 없습니다.
+              </div>
+            )}
           </div>
         </section>
 
