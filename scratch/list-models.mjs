@@ -1,0 +1,16 @@
+import { GoogleGenAI } from "@google/genai";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
+async function check() {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  try {
+    const models = await ai.models.list();
+    for await (const model of models) {
+        console.log(model.name);
+    }
+  } catch (err) {
+    console.error("Error:", err.message);
+  }
+}
+check();
