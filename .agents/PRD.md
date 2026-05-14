@@ -329,13 +329,13 @@ Supabase의 기본 `auth.users` 테이블과 1:1로 연결되는 확장 프로�
 | | 로그아웃 파기 (`POST`) | 임의로 변조되거나 이미 만료된 세션 쿠키로 로그아웃 요청 | 정상적으로 쿠키 삭제 처리 후 홈으로 리다이렉트 유도 | ✅ 완료 | **[검증 완료]** `supabase.auth.signOut()` 호출 및 브라우저 쿠키 강제 삭제 로직으로 세션 확실히 파기 확인. |
 | | 내 프로필/결제상태 조회 (`GET`) | 인증 헤더(또는 세션 쿠키) 없이 API 직접 접근 시도 | 401 Unauthorized 반환 | ✅ 완료 | **[검증 완료]** `my-page/page.tsx` 서버 컴포넌트에서 `getUser()` 실패 시 `/auth`로 즉시 리다이렉트 처리됨. |
 | | 내 프로필/결제상태 조회 (`GET`) | DB에서 탈퇴/삭제된 유저의 유효 기간이 남은 토큰으로 조회 시도 | 401 Unauthorized 또는 404 Not Found 반환 후 로컬 세션 강제 파기 | ✅ 완료 | **[검증 완료]** `getUser()`가 Supabase Auth DB를 직접 참조하므로 삭제된 유저의 세션은 즉시 무효화 및 리다이렉트 확인. |
-| **Feeds**<br/>`/api/feeds` | 공개 피드 페이징 | `limit` 파라미터에 10,000 등 과도하게 큰 값 요청 | 시스템 최대 허용치(예: 50)로 강제 조정되어 응답 | ⬜ 대기 | |
-| | 공개 피드 페이징 | `page` 값이 음수이거나 숫자가 아닌 문자열인 경우 | 1페이지로 기본값 처리되거나 유효성 에러(400) 반환 | ⬜ 대기 | |
-| **AI Processing**<br/>`/api/ai/generate` | 비동기 트리거 무결성 | 결제가 완료되지 않은(`PENDING`) `order_id`로 트리거 요청 | 권한 부족 또는 주문 상태 에러 반환 (403/400) | ⬜ 대기 | |
-| | 중복 생성 (Idempotency) | 동일한 `order_id`로 동시에 여러 번 AI 생성 요청 (광클/매크로) | 단 1회만 `GENERATING`으로 넘어가고 나머지는 차단 (409 Conflict) | ⬜ 대기 | |
-| | LLM 프롬프트 한계 | 유저의 꿈 내용이 토큰 한도를 초과하는 10만 자 이상의 텍스트 | 413 Payload Too Large 또는 400 Bad Request 에러 반환 | ⬜ 대기 | |
-| **Dreams**<br/>`/api/dreams` | 접근 권한 (RLS) | `is_public=false`인 타인의 꿈 해몽 결과에 ID로 접근 시도 | 403 Forbidden 또는 404 Not Found (Row Level Security 작동) | ⬜ 대기 | |
-| | 비정상 ID | UUID 포맷이 아닌 임의의 문자열로 상세 조회 요청 | 400 Bad Request 또는 404 Not Found | ⬜ 대기 | |
+| **Feeds**<br/>`/api/feeds` | 공개 피드 페이징 | `limit` 파라미터에 10,000 등 과도하게 큰 값 요청 | 시스템 최대 허용치(예: 50)로 강제 조정되어 응답 | ✅ 완료 | **[검증 완료]** API 내부에 서버 하드코딩(`.limit(50)`) 적용으로 쿼리 조작 무시 및 안전한 최대치(50)만 응답함. |
+| | 공개 피드 페이징 | `page` 값이 음수이거나 숫자가 아닌 문자열인 경우 | 1페이지로 기본값 처리되거나 유효성 에러(400) 반환 | ✅ 완료 | **[검증 완료]** 비정상적인 파라미터 조작을 무시하고 기본(최신 데이터) 응답 처리하여 500 에러를 원천 차단함. |
+| **AI Processing**<br/>`/api/ai/generate` | 비동기 트리거 무결성 | 결제가 완료되지 않은(`PENDING`) `order_id`로 트리거 요청 | 권한 부족 또는 주문 상태 에러 반환 (403/400) | ✅ 완료 | **[검증 완료]** `order.status !== "SUCCESS"` 조건 필터링으로 결제 미완료 건을 400 에러로 즉각 차단 확인. |
+| | 중복 생성 (Idempotency) | 동일한 `order_id`로 동시에 여러 번 AI 생성 요청 (광클/매크로) | 단 1회만 `GENERATING`으로 넘어가고 나머지는 차단 (409 Conflict) | ✅ 완료 | **[수정 및 검증 완료]** `dreamStatus !== "PENDING"` 조건을 라우트에 추가하여 중복 생성(Double Execution) 요청 시 409 Conflict 방어 적용 완료. |
+| | LLM 프롬프트 한계 | 유저의 꿈 내용이 토큰 한도를 초과하는 10만 자 이상의 텍스트 | 413 Payload Too Large 또는 400 Bad Request 에러 반환 | ✅ 완료 | **[수정 및 검증 완료]** `/api/orders`에 10,000자 초과 텍스트 필터링(413 Payload Too Large) 방어 로직 추가하여 백엔드 크래시 방지 완료. |
+| **Dreams**<br/>`/api/dreams` (현재 `/api/orders/[id]`로 통합) | 접근 권한 (RLS) | `is_public=false`인 타인의 꿈 해몽 결과에 ID로 접근 시도 | 403 Forbidden 또는 404 Not Found (Row Level Security 작동) | ✅ 완료 | **[검증 완료]** `/api/orders/[id]` 로직 내부의 `(!isOwner && !isPublic)` 검증을 통해 타인의 비공개 데이터 접근 시 403 에러로 차단됨을 확인. |
+| | 비정상 ID | UUID 포맷이 아닌 임의의 문자열로 상세 조회 요청 | 400 Bad Request 또는 404 Not Found | ✅ 완료 | **[검증 완료]** 포맷이 맞지 않는 값으로 조회 시 DB RPC 에러를 핸들링하여 500 에러 대신 404 Not Found를 안전하게 반환함. |
 | **Orders & Payments**<br/>`/api/orders`<br/>`/api/payments` | 비정상 금액 | `total_amount`를 클라이언트에서 0원 또는 음수로 조작하여 주문 생성 | 서버 측 검증에서 가격 불일치 차단 (400 Bad Request) | ✅ 완료 | **[검증 완료]** 프론트엔드가 전송한 금액 데이터를 무시하고 서버가 옵션(includeImage 등)을 기반으로 금액을 1500으로 직접 계산하여 저장함 |
 | | 결제 검증 (Webhook) | 토스 API 응답의 결제 금액과 DB에 저장된 주문 금액 불일치 | 결제 승인 실패 처리 및 위변조 경고 로깅 (400 Bad Request) | ✅ 완료 | **[검증 완료]** `confirm` API 호출 시 클라이언트 전달 금액과 DB 원본 금액 불일치 시 "Amount mismatch" 차단 확인 |
 | | 중복 결제 승인 | 이미 `SUCCESS` 처리된 주문건에 대해 다시 `confirm` 요청 | 이미 처리된 건으로 응답하며 DB 중복 업데이트 방지 | ✅ 완료 | **[검증 완료]** DB 상태가 SUCCESS인 경우 토스페이먼츠 승인 로직에 도달하기 전 400 (Already processed) 반환 확인 |
@@ -348,4 +348,8 @@ Supabase의 기본 `auth.users` 테이블과 1:1로 연결되는 확장 프로�
 | | 개별 주문 상세 조회 | 비회원이 자신이 주문하지 않은 다른 비회원의 `order_number`로 접근 | 403 Forbidden 반환 (is_public이 false인 경우) | ✅ 완료 | **[검증 완료]** `/api/orders/[id]` 라우트에서 `isOwner` 체크 로직 추가. 소유자도 아니고 공개된 꿈도 아닌 경우 403 차단 확인. |
 | | AI 분석 상태 표시 | `dreams.status`가 `PENDING`인 상태에서 상세 페이지 접근 | 결과 텍스트 대신 'AI 분석 중' 애니메이션 UI 노출 | ✅ 완료 | **[UI/UX 개선]** `DreamResultPage`에 `status` 기반 조건부 렌더링 도입. 분석 중일 때 에테리얼한 오로라 배경과 로딩 스피너 UI 적용. |
 | | 분석 완료 후 자동 갱신 | 사용자가 'AI 분석 중' 화면에서 대기하다가 새로고침 클릭 | 분석이 완료된 경우(`COMPLETED`) 즉시 실제 해몽 결과 화면으로 전환 | ✅ 완료 | **[검증 완료]** 새로고침 버튼(`router.refresh()`) 및 데이터 리페칭 로직으로 상태 변화 즉시 반영 확인. |
+| **AI Processing**<br/>`/api/ai` | 텔레그램 알림 발송 | AI 해몽 생성 완료(성공) 또는 예기치 않은 에러 발생(실패) 시 | 텔레그램 봇 API를 통해 관리자에게 상태 메시지(주문번호, 성공여부 등)가 즉각 발송됨 | ✅ 완료 | **[검증 완료]** `gemini.ts`의 `processAIGeneration` 내부에서 성공/실패 여부 및 결과 텍스트를 포함하여 Telegram Bot API(`sendTelegramMessage`) 호출 로직 동작 확인함. |
+| **MyPage**<br/>`/my-page` | 마이페이지 해몽 내역 DB 동기화 | 결제 및 AI 해몽 생성이 모두 완료된 직후 유저가 마이페이지에 진입하여 내역을 확인할 때 | 더미 데이터가 아닌 실제 DB의 `dreams` 및 `orders` 테이블 데이터를 패치하여 월별 필터링 및 리스트에 정상적으로 렌더링됨 | ✅ 완료 | **[검증 완료]** `my-page-content.tsx`에서 더미 데이터를 제거하고 `/api/orders/me` API를 통해 실제 DB 내역을 실시간으로 fetch하여 렌더링하도록 동기화 구현 및 확인함. |
+| **Feeds / Landing**<br/>`/` | 메인 랜딩 미리보기 DB 동기화 | DB에 `is_public=true`인 해몽 데이터가 추가되거나 `is_public` 상태가 `true`로 변경된 직후 랜딩 페이지 접근 시 | 하단 "다른 사람들의 꿈 이야기" 영역에 실제 DB 데이터가 최신순(최대 3건)으로 정확히 노출되며 이미지/텍스트 조건부 렌더링이 정상 적용됨 | ✅ 완료 | **[검증 완료]** `/api/feeds` 연동을 통해 `is_public=true`인 실제 DB 데이터를 정상적으로 패치하여 랜딩 하단에 렌더링됨을 확인함. |
+| **Feeds**<br/>`/feeds` | 피드 페이지 리스트 DB 동기화 | RLS 우회(Admin Client)를 통한 조인 데이터(주문, 프로필) 페칭 환경에서 피드 페이지 목록 조회 시 | `is_public=true`인 전체 목록이 페치되며, 다른 유저의 닉네임과 해몽 데이터(텍스트/이미지)가 500 에러나 데이터 누락 없이 화면에 정상 렌더링됨 | ✅ 완료 | **[검증 완료]** `admin.ts`를 활용해 `/api/feeds`에서 RLS를 안전하게 우회하도록 처리하여, 500 에러 없이 다른 유저의 닉네임과 해몽 데이터를 성공적으로 조인해 렌더링함을 확인함. |
 | **Admin**<br/>`/api/admin` | 어드민 권한 제어 | 일반 User 또는 Guest 권한의 토큰으로 관리자 API 호출 시도 | 403 Forbidden | ⬜ 대기 | |

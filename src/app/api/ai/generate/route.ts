@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     // 주문 및 꿈 내용 조회
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("*, dreams(dream_content)")
+      .select("*, dreams(dream_content, status)")
       .eq("id", orderId)
       .single();
 
@@ -27,6 +27,11 @@ export async function POST(request: Request) {
 
     if (order.status !== "SUCCESS") {
       return NextResponse.json({ message: "Payment not completed" }, { status: 400 });
+    }
+
+    const dreamStatus = order.dreams?.[0]?.status;
+    if (dreamStatus !== "PENDING") {
+      return NextResponse.json({ message: "AI processing already started or completed" }, { status: 409 });
     }
 
     const dreamContent = order.dreams?.[0]?.dream_content;

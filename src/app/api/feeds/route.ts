@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: dreams, error } = await supabase
       .from("dreams")
@@ -17,8 +17,7 @@ export async function GET() {
           order_number,
           profile_id,
           profiles (
-            nickname,
-            avatar_url
+            nickname
           )
         )
       `)
@@ -33,14 +32,14 @@ export async function GET() {
     const feeds = dreams.map((dream: any) => {
       // Handle array or object returns depending on supabase schema setup
       const order = Array.isArray(dream.orders) ? dream.orders[0] : dream.orders;
-      const profile = order?.profiles;
+      const profile = Array.isArray(order?.profiles) ? order.profiles[0] : order?.profiles;
       const isGuest = !order?.profile_id;
 
       return {
         id: order?.order_number || crypto.randomUUID(),
         user: {
           nickname: isGuest ? "비회원 여행자" : (profile?.nickname || "꿈꾸는 사람"),
-          avatarUrl: profile?.avatar_url || "",
+          avatarUrl: "", // profiles 테이블에 avatar_url 컬럼이 없어 빈 문자열로 처리
         },
         expertStyle: dream.expert_style,
         dreamContent: dream.dream_content,

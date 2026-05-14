@@ -13,6 +13,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Bad Request: Missing fields" }, { status: 400 });
     }
 
+    if (dreamContent.length > 10000) {
+      return NextResponse.json({ message: "Payload Too Large: Dream content exceeds maximum length" }, { status: 413 });
+    }
+
     let profileId = null;
     let guestId = null;
     let userType = "MEMBER";
