@@ -111,10 +111,12 @@ export async function POST(request: Request) {
     await sendTelegramMessage(message);
 
     // 5. AI 분석 비동기 트리거 호출
-    after(() => {
-      processAIGeneration(typedOrder.id, dream?.dream_content || "", typedOrder.total_amount > 1500).catch(err => {
+    after(async () => {
+      try {
+        await processAIGeneration(typedOrder.id, dream?.dream_content || "", typedOrder.total_amount > 1500);
+      } catch (err) {
         console.error("Background AI processing error:", err);
-      });
+      }
     });
     
     return NextResponse.json(data, { status: 200 });
