@@ -59,16 +59,19 @@ Analysis: ${aiAnalysis}`,
 
         const imagePrompt = imagePromptGen.text?.trim() || "A surreal and dreamy landscape";
 
-        // 2-2. 이미지 생성 API 호출
-        const imageResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash-image',
-          contents: imagePrompt,
+        // 2-2. 이미지 생성 API 호출 (Imagen 3 모델 사용)
+        const imageResponse = await ai.models.generateImages({
+          model: 'imagen-3.0-generate-002',
+          prompt: imagePrompt,
+          config: {
+            numberOfImages: 1
+          }
         });
 
-        const inlineData = imageResponse.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData;
+        const imageBytes = imageResponse.generatedImages?.[0]?.image?.imageBytes;
         
-        if (inlineData && inlineData.data) {
-           const buffer = Buffer.from(inlineData.data, 'base64');
+        if (imageBytes) {
+           const buffer = Buffer.from(imageBytes, 'base64');
            
            // 2-3. Supabase 스토리지 업로드
            const fileName = `dream_${orderId}_${Date.now()}.png`;
@@ -90,7 +93,7 @@ Analysis: ${aiAnalysis}`,
 
            imageUrl = publicUrlData.publicUrl;
         } else {
-           throw new Error("No inlineData found in the generated image response");
+           throw new Error("No imageBytes found in the generated image response");
         }
       } catch (imgErr) {
         console.error("Image generation failed:", imgErr);
