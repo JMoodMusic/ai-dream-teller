@@ -13,6 +13,7 @@ export async function processAIGeneration(orderId: string, dreamContent: string,
   let aiAnalysis = "해몽 분석 결과를 생성하지 못했습니다.";
   let imageUrl: string | null = null;
   let imageGenerationFailed = false;
+  let imgErrorDetails = "";
 
   try {
     const prompt = `다음은 사용자의 꿈 내용입니다. 이 꿈을 전문적이고 친절하게 해석해주세요.
@@ -98,6 +99,7 @@ Analysis: ${aiAnalysis}`,
       } catch (imgErr) {
         console.error("Image generation failed:", imgErr);
         imageGenerationFailed = true;
+        imgErrorDetails = imgErr instanceof Error ? imgErr.message : String(imgErr);
         // 이미지 생성이 실패하더라도 전체 프로세스는 진행되도록 Fallback 처리
         imageUrl = "https://picsum.photos/800/600?random=" + Date.now();
         
@@ -127,7 +129,7 @@ Analysis: ${aiAnalysis}`,
 
     // 텔레그램 성공 알림 전송
     const previewText = aiAnalysis.length > 50 ? aiAnalysis.slice(0, 50) + "..." : aiAnalysis;
-    const imgStatus = includeImage ? (imageGenerationFailed ? "❌ (실패)" : "✅ (성공)") : "N/A";
+    const imgStatus = includeImage ? (imageGenerationFailed ? `❌ (실패: ${imgErrorDetails})` : "✅ (성공)") : "N/A";
     await sendTelegramMessage(`✨ [AI 해몽 완료]\n- 주문번호: ${orderId}\n- 상태: COMPLETED\n- 이미지 생성: ${imgStatus}\n- 해몽 결과 미리보기:\n${previewText}`);
 
   } catch (error: unknown) {
