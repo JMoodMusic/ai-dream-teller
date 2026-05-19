@@ -5,6 +5,9 @@ import { after } from "next/server";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { processAIGeneration } from "@/lib/ai/gemini";
 
+// Vercel Hobby 플랜 최대 타임아웃(60초) 설정 - AI 이미지 생성 대기
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
