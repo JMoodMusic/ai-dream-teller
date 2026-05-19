@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { after } from "next/server";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { processAIGeneration } from "@/lib/ai/gemini";
@@ -86,11 +87,16 @@ export async function POST(request: Request) {
     });
 
     // 4. 결제 성공 알림 전송을 위한 정보 조회
-    const { data: dream } = await supabase
+    const adminSupabase = createAdminClient();
+    const { data: dream, error: dreamFetchError } = await adminSupabase
       .from("dreams")
       .select("dream_content")
       .eq("order_id", typedOrder.id)
       .single();
+      
+    if (dreamFetchError) {
+      console.error("Failed to fetch dream content for AI generation:", dreamFetchError);
+    }
 
     const dreamSnippet = dream?.dream_content 
       ? (dream.dream_content.length > 20 ? dream.dream_content.substring(0, 20) + "..." : dream.dream_content)

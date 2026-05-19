@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -17,6 +18,7 @@ interface PurchaseItem {
   type: "text" | "image";
   price: number;
   status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
+  imageUrl?: string | null;
 }
 
 // DUMMY_PURCHASES 제거됨
@@ -42,6 +44,7 @@ export default function GuestCheckPage() {
           dreams: {
             status: "COMPLETED" | "PENDING" | "PROCESSING" | "FAILED";
             dream_content: string;
+            image_url?: string | null;
           }[];
         }
 
@@ -53,6 +56,7 @@ export default function GuestCheckPage() {
           type: o.total_amount > 1500 ? "image" : "text",
           price: o.total_amount,
           status: o.dreams[0]?.status || "PENDING",
+          imageUrl: o.dreams[0]?.image_url,
         }));
         
         setPurchases(mapped);
@@ -159,15 +163,17 @@ export default function GuestCheckPage() {
                     href={`/dream-result/${purchase.orderId}`}
                     className="group flex items-center gap-4 p-4 rounded-2xl border border-slate-100/80 bg-white/40 hover:bg-white/80 hover:border-purple-200/60 hover:shadow-md transition-all"
                   >
-                    {/* 아이콘 */}
+                    {/* 아이콘 또는 썸네일 */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden relative ${
                         purchase.type === "image"
                           ? "bg-gradient-to-br from-purple-100 to-pink-100"
                           : "bg-gradient-to-br from-slate-100 to-blue-100"
                       }`}
                     >
-                      {purchase.type === "image" ? (
+                      {purchase.imageUrl ? (
+                        <Image src={purchase.imageUrl} alt="Dream Thumbnail" fill className="object-cover" sizes="48px" />
+                      ) : purchase.type === "image" ? (
                         <Sparkles className="w-5 h-5 text-pink-500" />
                       ) : (
                         <FileText className="w-5 h-5 text-blue-500" />

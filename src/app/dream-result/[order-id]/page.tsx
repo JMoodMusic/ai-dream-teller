@@ -4,8 +4,10 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Copy, Share2, Sparkles, Moon, ArrowLeft, Loader2 } from "lucide-react";
+import { Copy, Share2, Sparkles, Moon, ArrowLeft, Loader2, Lock, Globe } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -33,6 +35,28 @@ export default function DreamResultPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [isUpdatingPublic, setIsUpdatingPublic] = useState(false);
+
+  const handleTogglePublic = async (checked: boolean) => {
+    if (!data) return;
+    try {
+      setIsUpdatingPublic(true);
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: checked })
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update status");
+      }
+      setData(prev => prev ? { ...prev, isPublic: checked } : null);
+    } catch (err) {
+      console.error(err);
+      alert("상태 업데이트에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsUpdatingPublic(false);
+    }
+  };
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -294,6 +318,43 @@ export default function DreamResultPage() {
             </CardContent>
           </Card>
         </section>
+
+        {/* 공개/비공개 토글 (소유자만 보임) */}
+        {isOwner && (
+          <section className="mb-12">
+            <Card className="bg-white/60 backdrop-blur-sm border-purple-100 shadow-sm rounded-3xl overflow-hidden">
+              <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-start space-x-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${data.isPublic ? "bg-pink-50 text-pink-500" : "bg-slate-50 text-slate-400"}`}>
+                    {data.isPublic ? <Globe className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 tracking-tight mb-1">
+                      {data.isPublic ? "대중에게 공개된 해몽" : "나만 볼 수 있는 해몽"}
+                    </h3>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      {data.isPublic 
+                        ? "현재 이 해몽은 피드에 공개되어 다른 사람들도 볼 수 있어요. 원치 않는다면 비공개로 변경할 수 있습니다." 
+                        : "현재 이 해몽은 비공개 상태입니다. 다른 사람들과 신비로운 꿈 이야기를 공유하려면 공개로 변경해보세요."}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 shrink-0">
+                  <Label htmlFor="public-toggle" className="text-sm font-medium text-slate-600 cursor-pointer">
+                    {data.isPublic ? "공개 상태" : "비공개 상태"}
+                  </Label>
+                  <Switch
+                    id="public-toggle"
+                    checked={data.isPublic}
+                    onCheckedChange={handleTogglePublic}
+                    disabled={isUpdatingPublic}
+                    className="data-[state=checked]:bg-pink-500"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
 
         {/* 공유하기 버튼 */}
         <section className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">

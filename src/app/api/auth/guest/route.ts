@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     // RPC 함수를 사용하여 비회원 정보 조회
     const { data: guests, error: guestError } = await supabase.rpc(
       "get_guest_by_phone",
-      { p_phone_number: phoneNumber.replace(/-/g, "") }
+      { p_phone_number: phoneNumber }
     );
 
     const typedGuests = guests as GuestInfo[] | null;

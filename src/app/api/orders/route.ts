@@ -9,7 +9,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { expertStyle, dreamContent, includeImage, guestPhone, guestPassword } = body;
 
-    if (!expertStyle || !dreamContent) {
+    const trimmedDreamContent = typeof dreamContent === 'string' ? dreamContent.trim() : '';
+
+    if (!expertStyle || !trimmedDreamContent) {
       return NextResponse.json({ message: "Bad Request: Missing fields" }, { status: 400 });
     }
 
@@ -95,7 +97,7 @@ export async function POST(request: Request) {
       .insert({
         order_id: orderId,
         expert_style: expertStyle,
-        dream_content: dreamContent,
+        dream_content: trimmedDreamContent,
         status: "PENDING",
         is_public: false,
       });
