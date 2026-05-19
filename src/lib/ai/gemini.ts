@@ -60,9 +60,9 @@ Analysis: ${aiAnalysis}`,
 
         const imagePrompt = imagePromptGen.text?.trim() || "A surreal and dreamy landscape";
 
-        // 2-2. 이미지 생성 API 호출 (Imagen 3 모델 사용)
+        // 2-2. 이미지 생성 API 호출 (Imagen 4.0 모델 사용)
         const imageResponse = await ai.models.generateImages({
-          model: 'imagen-3.0-generate-002',
+          model: 'imagen-4.0-generate-001',
           prompt: imagePrompt,
           config: {
             numberOfImages: 1
