@@ -508,7 +508,7 @@ const AdminOrderDetailPage = ({ params }: { params: Promise<{ "order-id": string
                   <span className="text-sm font-black text-slate-900">
                     {order.totalAmount.toLocaleString()}원
                     <span className="text-[9px] text-slate-400 block font-semibold text-right leading-none mt-0.5">
-                      {order.totalAmount === 1,500 ? "텍스트 전용 상품" : "텍스트 + AI 이미지 상품"}
+                      {order.totalAmount === 1500 ? "텍스트 전용 상품" : "텍스트 + AI 이미지 상품"}
                     </span>
                   </span>
                 </div>
