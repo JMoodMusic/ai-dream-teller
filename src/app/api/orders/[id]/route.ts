@@ -47,7 +47,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
     
     // 접근 권한 체크
-    const isOwner = (user && typedOrder.profile_id === user.id) || (guestId && typedOrder.guest_id === guestId);
+    let isOwner = false;
+    if (user && typedOrder.profile_id === user.id) {
+      isOwner = true;
+    } else if (guestId && typedOrder.guest_id) {
+      if (typedOrder.guest_id === guestId) {
+        isOwner = true;
+      } else {
+        const { data: currentGuest } = await adminSupabase
+          .from("guests")
+          .select("phone_number")
+          .eq("id", guestId)
+          .maybeSingle();
+
+        const { data: targetGuest } = await adminSupabase
+          .from("guests")
+          .select("phone_number")
+          .eq("id", typedOrder.guest_id)
+          .maybeSingle();
+
+        if (currentGuest && targetGuest && currentGuest.phone_number === targetGuest.phone_number) {
+          isOwner = true;
+        }
+      }
+    }
     const isPublic = dream.is_public;
 
     if (!isOwner && !isPublic) {
@@ -87,7 +110,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    const isOwner = (user && typedOrder.profile_id === user.id) || (guestId && typedOrder.guest_id === guestId);
+    let isOwner = false;
+    if (user && typedOrder.profile_id === user.id) {
+      isOwner = true;
+    } else if (guestId && typedOrder.guest_id) {
+      if (typedOrder.guest_id === guestId) {
+        isOwner = true;
+      } else {
+        const adminSupabase = createAdminClient();
+        const { data: currentGuest } = await adminSupabase
+          .from("guests")
+          .select("phone_number")
+          .eq("id", guestId)
+          .maybeSingle();
+
+        const { data: targetGuest } = await adminSupabase
+          .from("guests")
+          .select("phone_number")
+          .eq("id", typedOrder.guest_id)
+          .maybeSingle();
+
+        if (currentGuest && targetGuest && currentGuest.phone_number === targetGuest.phone_number) {
+          isOwner = true;
+        }
+      }
+    }
     
     if (!isOwner) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });

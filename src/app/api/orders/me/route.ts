@@ -31,7 +31,37 @@ export async function GET() {
     if (user) {
       query = query.eq("profile_id", user.id);
     } else if (guestId) {
-      query = query.eq("guest_id", guestId);
+      // 1. 현재 세션 ID에 해당하는 비회원의 전화번호 조회
+      const { data: currentGuest, error: guestLookupError } = await createAdminClient()
+        .from("guests")
+        .select("phone_number")
+        .eq("id", guestId)
+        .maybeSingle();
+
+      if (guestLookupError) {
+        console.error("Guest phone lookup error:", guestLookupError);
+        throw guestLookupError;
+      }
+
+      if (!currentGuest) {
+        return NextResponse.json({ message: "Guest session invalid" }, { status: 401 });
+      }
+
+      // 2. 해당 전화번호를 공유하는 모든 guest_id들 조회
+      const { data: allGuests, error: allGuestsError } = await createAdminClient()
+        .from("guests")
+        .select("id")
+        .eq("phone_number", currentGuest.phone_number);
+
+      if (allGuestsError || !allGuests) {
+        console.error("All guests fetch error:", allGuestsError);
+        throw allGuestsError || new Error("Failed to fetch all guest IDs");
+      }
+
+      const guestIds = allGuests.map((g) => g.id);
+
+      // 3. 그 전화번호로 가입되었던 모든 비회원 ID들의 주문들을 전부 포함해 조회
+      query = query.in("guest_id", guestIds);
     }
 
     const { data: orders, error: ordersError } = await query;

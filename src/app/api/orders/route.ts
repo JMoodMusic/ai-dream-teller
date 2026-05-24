@@ -36,11 +36,11 @@ export async function POST(request: Request) {
         created_at: string;
       }
 
-      const { data: existingGuest } = await supabase
-        .rpc("get_guest_by_phone", { p_phone_number: guestPhone })
-        .maybeSingle();
+      const { data: guests } = await supabase
+        .rpc("get_guest_by_phone", { p_phone_number: guestPhone });
 
-      const guest = existingGuest as GuestInfo | null;
+      const typedGuests = guests as GuestInfo[] | null;
+      const guest = typedGuests && typedGuests.length > 0 ? typedGuests[0] : null;
 
       if (guest) {
         if (guest.password_hash !== guestPassword) {
