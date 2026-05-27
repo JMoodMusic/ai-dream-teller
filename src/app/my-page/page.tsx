@@ -54,17 +54,18 @@ const MyPage = async ({ searchParams }: MyPageProps) => {
 
   // Supabase 미연동 상태 방어
   let user = null;
+  let shouldRedirect = false;
   try {
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     user = data.user;
   } catch {
     // Supabase 환경변수 미설정 시 로그인 페이지로 리다이렉트
-    redirect("/auth");
+    shouldRedirect = true;
   }
 
-  // 미인증 유저는 로그인 페이지로 리다이렉트
-  if (!user) {
+  // 미인증 유저 또는 에러 발생 시 로그인 페이지로 리다이렉트
+  if (shouldRedirect || !user) {
     redirect("/auth");
   }
 

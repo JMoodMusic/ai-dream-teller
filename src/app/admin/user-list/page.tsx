@@ -3,12 +3,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { 
   Search, 
-  Filter, 
   ChevronLeft, 
   ChevronRight, 
   RefreshCw, 
   SlidersHorizontal, 
-  User, 
+  User as UserIcon, 
   UserCheck, 
   UserX,
   CreditCard,
@@ -19,8 +18,7 @@ import {
   Sparkles,
   ArrowUpDown,
   History,
-  TrendingUp,
-  AlertCircle
+  TrendingUp
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
@@ -48,201 +46,11 @@ interface UserItem {
   dreamHistory: UserDreamHistory[];
 }
 
-// 다중 필터 타입 정의
 type UserTypeFilter = "ALL" | "MEMBER" | "GUEST";
 type PaymentFilter = "ALL" | "PAID" | "UNPAID";
 type ProviderFilter = "ALL" | "GOOGLE" | "KAKAO" | "EMAIL" | "GUEST_PHONE";
 type SortOption = "date_desc" | "date_asc" | "spending_desc" | "orders_desc" | "name_asc";
 
-// 주문 목록 데이터와 정확히 매칭 및 무결성이 보장된 13인 유저 더미 원장 데이터
-const MOCK_USERS: UserItem[] = [
-  {
-    id: "usr_101",
-    emailOrPhone: "richdreamer@gmail.com",
-    nickname: "황금빛항해자",
-    userType: "MEMBER",
-    provider: "google",
-    createdAt: "2026-05-10T11:00:00.000Z",
-    orderCount: 3,
-    totalAmount: 5500,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-24T07:17:21.913Z", expertStyle: "프로이트", snippet: "지그문트 프로이트를 봤어... 책을 건네줬지.", amount: 1500, status: "SUCCESS" },
-      { date: "2026-05-21T11:22:09.112Z", expertStyle: "칼 융", snippet: "하늘을 휠휠 날면서 황금빛 태평양 바다를 내려다봤는데...", amount: 1500, status: "SUCCESS" },
-      { date: "2026-05-18T10:05:12.900Z", expertStyle: "칼 융", snippet: "하얀 눈이 내리는 날 숲속 길을 잃었다가 오두막을...", amount: 2000, status: "PENDING" }
-    ]
-  },
-  {
-    id: "usr_102",
-    emailOrPhone: "010-1234-5107",
-    nickname: "비회원_5107",
-    userType: "GUEST",
-    provider: "guest_phone",
-    createdAt: "2026-05-24T07:17:21.000Z",
-    orderCount: 1,
-    totalAmount: 1500,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-24T07:17:21.913Z", expertStyle: "프로이트", snippet: "지그문트 프로이트를 봤어... 그가 꿈의 해석 책을...", amount: 1500, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_103",
-    emailOrPhone: "010-9876-5432",
-    nickname: "비회원_5432",
-    userType: "GUEST",
-    provider: "guest_phone",
-    createdAt: "2026-05-24T07:12:32.000Z",
-    orderCount: 1,
-    totalAmount: 2000,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-24T07:12:32.807Z", expertStyle: "칼 융", snippet: "삼성전자 인버스에 전재산 박아서 한강 다리에 가 서있는데...", amount: 2000, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_104",
-    emailOrPhone: "user1@dreamer.com",
-    nickname: "루시드드림",
-    userType: "MEMBER",
-    provider: "email",
-    createdAt: "2026-05-12T03:00:00.000Z",
-    orderCount: 2,
-    totalAmount: 4000,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-24T07:05:28.699Z", expertStyle: "아들러", snippet: "니어 프로토콜 코인 상승을 보고 신나게 사람들 틈에서...", amount: 2000, status: "SUCCESS" },
-      { date: "2026-05-14T11:45:00.829Z", expertStyle: "칼 융", snippet: "거대 쓰나미가 덮쳐오는데 내 지휘에 홍해처럼 갈라졌어.", amount: 2000, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_105",
-    emailOrPhone: "nightmare@daum.net",
-    nickname: "악몽수집가",
-    userType: "MEMBER",
-    provider: "kakao",
-    createdAt: "2026-05-20T22:40:00.000Z",
-    orderCount: 1,
-    totalAmount: 2000,
-    hasPaid: false, // 결제 실패했으므로 실구매 금액은 미반영 기준
-    dreamHistory: [
-      { date: "2026-05-20T22:45:11.890Z", expertStyle: "프로이트", snippet: "어둠 속에서 괴물이 나를 쫓아오는데 다리가 굳어버렸어.", amount: 2000, status: "FAILED" }
-    ]
-  },
-  {
-    id: "usr_106",
-    emailOrPhone: "010-8888-9999",
-    nickname: "비회원_9999",
-    userType: "GUEST",
-    provider: "guest_phone",
-    createdAt: "2026-05-19T14:15:00.000Z",
-    orderCount: 1,
-    totalAmount: 1500,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-19T14:15:30.412Z", expertStyle: "아들러", snippet: "우주선을 타고 화성에 내렸는데 외계인이 대접해줬어.", amount: 1500, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_107",
-    emailOrPhone: "snowy@naver.com",
-    nickname: "겨울왕국",
-    userType: "MEMBER",
-    provider: "kakao",
-    createdAt: "2026-05-18T10:00:00.000Z",
-    orderCount: 1,
-    totalAmount: 2000,
-    hasPaid: false,
-    dreamHistory: [
-      { date: "2026-05-18T10:05:12.900Z", expertStyle: "칼 융", snippet: "눈 오는 날 숲속에서 길을 잃었다가 따뜻한 오두막...", amount: 2000, status: "PENDING" }
-    ]
-  },
-  {
-    id: "usr_108",
-    emailOrPhone: "010-5555-4444",
-    nickname: "비회원_4444",
-    userType: "GUEST",
-    provider: "guest_phone",
-    createdAt: "2026-05-17T09:12:00.000Z",
-    orderCount: 1,
-    totalAmount: 1500,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-17T09:12:45.312Z", expertStyle: "프로이트", snippet: "시험장에 들어갔는데 연필과 지우개가 모래처럼 부러져...", amount: 1500, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_109",
-    emailOrPhone: "jumper@dream.com",
-    nickname: "스카이폴",
-    userType: "MEMBER",
-    provider: "google",
-    createdAt: "2026-05-16T18:30:00.000Z",
-    orderCount: 1,
-    totalAmount: 2000,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-16T18:34:20.198Z", expertStyle: "아들러", snippet: "100층 꼭대기에서 번지점프를 하는데 쾌감을 느꼈어.", amount: 2000, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_110",
-    emailOrPhone: "010-2222-3333",
-    nickname: "비회원_3333",
-    userType: "GUEST",
-    provider: "guest_phone",
-    createdAt: "2026-05-15T15:20:00.000Z",
-    orderCount: 1,
-    totalAmount: 1500,
-    hasPaid: false,
-    dreamHistory: [
-      { date: "2026-05-15T15:20:10.512Z", expertStyle: "프로이트", snippet: "명품 가방을 버스 짐칸에 두고 내려서 필사적으로...", amount: 1500, status: "FAILED" }
-    ]
-  },
-  {
-    id: "usr_111",
-    emailOrPhone: "teeth_lost@gmail.com",
-    nickname: "치과무서워",
-    userType: "MEMBER",
-    provider: "email",
-    createdAt: "2026-05-12T05:30:00.000Z",
-    orderCount: 1,
-    totalAmount: 2000,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-12T05:34:11.900Z", expertStyle: "프로이트", snippet: "앞니와 어금니가 몽땅 빠지며 입안이 선혈로 가득...", amount: 2000, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_112",
-    emailOrPhone: "lucky_lotto@naver.com",
-    nickname: "인생역전로또",
-    userType: "MEMBER",
-    provider: "google",
-    createdAt: "2026-05-11T23:50:00.000Z",
-    orderCount: 2,
-    totalAmount: 3500,
-    hasPaid: true,
-    dreamHistory: [
-      { date: "2026-05-11T23:56:00.298Z", expertStyle: "칼 융", snippet: "돌아가신 할머니가 오만원 돈뭉치 보따리를 주셨어.", amount: 1500, status: "SUCCESS" },
-      { date: "2026-05-22T03:16:06.839Z", expertStyle: "프로이트", snippet: "돼지랑 같이 앉아서 돼지갈비를 맛있게 구워 먹었어.", amount: 2000, status: "SUCCESS" }
-    ]
-  },
-  {
-    id: "usr_113",
-    emailOrPhone: "clean_slate@gmail.com",
-    nickname: "신규새출발",
-    userType: "MEMBER",
-    provider: "google",
-    createdAt: "2026-05-24T06:00:00.000Z",
-    orderCount: 0,
-    totalAmount: 0,
-    hasPaid: false,
-    dreamHistory: []
-  }
-];
-
-// TODO: 추후 관리자용 전체 유저 조회 API(/api/admin/users) 연동 시 SWR 캐싱 및 RLS 보안 필터 적용 (FIX: 비회원 전화번호 노출 시 마스킹 정책 규정 준수)
 const UserListPage = () => {
   // 상태 제어
   const [searchTerm, setSearchTerm] = useState("");
@@ -251,89 +59,57 @@ const UserListPage = () => {
   const [provider, setProvider] = useState<ProviderFilter>("ALL");
   const [sortBy, setSortBy] = useState<SortOption>("date_desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState<UserItem[]>(MOCK_USERS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   
   // 상세 사이드 오버/드로어 상태
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
 
   const itemsPerPage = 8;
 
-  // 다중 필터 & 정렬 & 검색 로직 적용 (useMemo)
-  const filteredAndSortedUsers = useMemo(() => {
-    let result = [...users];
+  // 실제 백엔드 API로부터 통합 가입 유저 목록 가져오기
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      const queryParams = new URLSearchParams({
+        search: searchTerm,
+        userType,
+        paymentStatus,
+        provider,
+        sortBy,
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString()
+      });
 
-    // 1. 통합 텍스트 검색 (이메일, 휴대폰 번호, 닉네임)
-    if (searchTerm.trim() !== "") {
-      const lowerSearch = searchTerm.toLowerCase();
-      result = result.filter(u => 
-        u.emailOrPhone.toLowerCase().includes(lowerSearch) ||
-        u.nickname.toLowerCase().includes(lowerSearch) ||
-        u.id.toLowerCase().includes(lowerSearch)
-      );
+      const res = await fetch(`/api/admin/users?${queryParams.toString()}`);
+      if (!res.ok) throw new Error("Users API fetch failed");
+      const json = await res.json();
+
+      setUsers(json.users || []);
+      setTotalCount(json.pagination?.totalCount || 0);
+      setTotalPages(json.pagination?.totalPages || 1);
+    } catch (err) {
+      console.error("Users list load failed:", err);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // 2. 회원/비회원 유저 유형 필터링
-    if (userType !== "ALL") {
-      result = result.filter(u => u.userType === userType);
-    }
+  // 필터 및 페이지 상태 변화에 따른 자동 패치
+  useEffect(() => {
+    fetchUsers();
+  }, [searchTerm, userType, paymentStatus, provider, sortBy, currentPage]);
 
-    // 3. 결제 이력 보유 여부 필터링
-    if (paymentStatus !== "ALL") {
-      if (paymentStatus === "PAID") {
-        result = result.filter(u => u.hasPaid === true);
-      } else {
-        result = result.filter(u => u.hasPaid === false);
-      }
-    }
-
-    // 4. 가입 제공자(소셜) 필터링
-    if (provider !== "ALL") {
-      result = result.filter(u => u.provider.toUpperCase() === provider);
-    }
-
-    // 5. 정렬 제어
-    if (sortBy === "date_desc") {
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (sortBy === "date_asc") {
-      result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    } else if (sortBy === "spending_desc") {
-      result.sort((a, b) => b.totalAmount - a.totalAmount);
-    } else if (sortBy === "orders_desc") {
-      result.sort((a, b) => b.orderCount - a.orderCount);
-    } else if (sortBy === "name_asc") {
-      result.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
-    }
-
-    return result;
-  }, [users, searchTerm, userType, paymentStatus, provider, sortBy]);
-
-  // 페이지네이션 처리
-  const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredAndSortedUsers.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredAndSortedUsers, currentPage]);
-
-  const totalPages = Math.max(Math.ceil(filteredAndSortedUsers.length / itemsPerPage), 1);
-
-  // 조건 탐색 변경 시 1페이지 원복
+  // 필터 조건 변경 시 페이지 리셋
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, userType, paymentStatus, provider, sortBy]);
 
-  // 목록 새로고침 시뮬레이터
+  // 유저 DB 동기화
   const handleRefresh = async () => {
-    try {
-      setIsLoading(true);
-      // TODO: 실제 백엔드 연동 시 `fetch('/api/admin/users')`
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUsers(MOCK_USERS);
-      setCurrentPage(1);
-    } catch (error) {
-      console.error("유저 대장을 갱신하는 중 오류 발생:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await fetchUsers();
   };
 
   // 필터 초기화
@@ -343,22 +119,23 @@ const UserListPage = () => {
     setPaymentStatus("ALL");
     setProvider("ALL");
     setSortBy("date_desc");
+    setCurrentPage(1);
   };
 
-  // 회원 기본 메트릭 통계 집계
+  // 회원 기본 메트릭 통계 집계 (현재 로딩된 페이지와 집계 데이터 기준)
   const stats = useMemo(() => {
     const members = users.filter(u => u.userType === "MEMBER");
     const guests = users.filter(u => u.userType === "GUEST");
     const payingUsers = users.filter(u => u.hasPaid);
     
     return {
-      totalUsers: users.length,
+      totalUsers: totalCount,
       memberCount: members.length,
       guestCount: guests.length,
       payingCount: payingUsers.length,
-      conversionRate: Math.round((payingUsers.length / users.length) * 100)
+      conversionRate: totalCount > 0 ? Math.round((payingUsers.length / users.length) * 100) : 0
     };
-  }, [users]);
+  }, [users, totalCount]);
 
   return (
     <div className="space-y-8 relative">
@@ -396,11 +173,11 @@ const UserListPage = () => {
               </h3>
               <p className="text-[11px] text-purple-500 font-semibold flex items-center gap-1">
                 <UserCheck className="w-3.5 h-3.5" />
-                회원 {stats.memberCount}명 / 게스트 {stats.guestCount}명
+                정식 회원 및 비회원 통합 대장
               </p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center shrink-0">
-              <User className="w-5 h-5 text-purple-500" />
+              <UserIcon className="w-5 h-5 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -565,7 +342,7 @@ const UserListPage = () => {
           <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
           <p className="text-slate-500 font-medium animate-pulse">유저 정보 원장을 동기화하고 있습니다...</p>
         </div>
-      ) : filteredAndSortedUsers.length === 0 ? (
+      ) : users.length === 0 ? (
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200/60 shadow-sm rounded-3xl p-12 text-center">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <UserX className="w-7 h-7 text-slate-400" />
@@ -601,7 +378,7 @@ const UserListPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm">
-                  {paginatedUsers.map((user) => (
+                  {users.map((user) => (
                     <tr key={user.id} className="h-16 hover:bg-slate-50/50 transition-colors">
                       <td className="text-slate-500 font-medium text-xs pl-2 shrink-0">
                         {format(new Date(user.createdAt), "yyyy-MM-dd HH:mm", { locale: ko })}
@@ -674,8 +451,8 @@ const UserListPage = () => {
           {/* 4. 하단 페이지네이션 컨트롤바 */}
           <div className="flex justify-between items-center bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl px-6 py-4 shadow-sm">
             <span className="text-xs font-bold text-slate-500">
-              총 {filteredAndSortedUsers.length}명 중 {(currentPage - 1) * itemsPerPage + 1}-
-              {Math.min(currentPage * itemsPerPage, filteredAndSortedUsers.length)}명 표출
+              총 {totalCount}명 중 {(currentPage - 1) * itemsPerPage + 1}-
+              {Math.min(currentPage * itemsPerPage, totalCount)}명 표출
             </span>
 
             <div className="flex items-center gap-1">
@@ -799,35 +576,31 @@ const UserListPage = () => {
                   <History className="w-3.5 h-3.5 text-purple-500" />
                   3. 해몽 의뢰 히스토리 ({selectedUser.dreamHistory.length}건)
                 </span>
-
+                
                 {selectedUser.dreamHistory.length === 0 ? (
-                  <div className="p-6 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                    <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-xs font-bold text-slate-400">가입 후 구매 이력이 존재하지 않습니다.</p>
+                  <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center bg-slate-50/50">
+                    <UserX className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-500">해몽 거래 원장이 존재하지 않습니다</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {selectedUser.dreamHistory.map((item, idx) => (
-                      <div key={idx} className="p-4 rounded-2xl border border-slate-200/80 bg-white shadow-xs space-y-2">
+                      <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className="text-[10px] text-slate-400 font-bold">
                             {format(new Date(item.date), "yyyy-MM-dd HH:mm", { locale: ko })}
                           </span>
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
-                            item.status === "SUCCESS" 
-                              ? "bg-green-50 text-green-600" 
-                              : item.status === "PENDING"
-                              ? "bg-amber-50 text-amber-600"
-                              : "bg-red-50 text-red-600"
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                            item.status === "SUCCESS" ? "bg-green-50 text-green-600" : item.status === "PENDING" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-600"
                           }`}>
-                            {item.status === "SUCCESS" ? "결제 승인" : item.status === "PENDING" ? "대기" : "실패"}
+                            {item.status === "SUCCESS" ? "결제성공" : item.status === "PENDING" ? "입금대기" : "결제실패"}
                           </span>
                         </div>
-                        <p className="text-xs font-bold text-slate-800 truncate">
+                        <p className="text-xs font-bold text-slate-700 italic">
                           &ldquo; {item.snippet} &rdquo;
                         </p>
-                        <div className="flex justify-between items-center text-[10px] pt-1.5 border-t border-slate-50 font-semibold text-slate-500">
-                          <span>선택 해몽가: {item.expertStyle}</span>
+                        <div className="flex justify-between items-center text-[10px] pt-1.5 border-t border-slate-200/50">
+                          <span className="font-semibold text-slate-400">선택 스타일: <b className="text-purple-600 font-bold">{item.expertStyle}</b></span>
                           <span className="font-black text-slate-800">{item.amount.toLocaleString()}원</span>
                         </div>
                       </div>

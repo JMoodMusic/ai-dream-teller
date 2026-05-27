@@ -1,14 +1,38 @@
 import React from "react";
 import AdminSidebar from "@/components/admin/sidebar";
 import AdminHeader from "@/components/admin/header";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-// TODO: 추후 관리자용 RLS 및 미들웨어 세션 검증이 완비되면 비정상 접근(비회원 또는 일반 회원) 시 /auth 리다이렉트 처리 필요
-const AdminLayout = ({ children }: AdminLayoutProps) => {
+const AdminLayout = async ({ children }: AdminLayoutProps) => {
+  let shouldRedirect = false;
+
+  // 어드민 세션 쿠키 검증 가동 (try-catch 내부에서는 체크만 진행)
+  try {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get("admin_session")?.value;
+
+    if (adminSession !== "true") {
+      shouldRedirect = true;
+    }
+  } catch (error) {
+    console.error("Admin Layout Auth Guard Error:", error);
+    shouldRedirect = true;
+  }
+
+  // NEXT_REDIRECT 자바스크립트 예외가 catch에 걸리지 않도록 try-catch 외부 안전지대에서 실행
+  if (shouldRedirect) {
+    return redirect("/admin-login");
+  }
+
+
+
   return (
+
     <div className="flex w-full h-screen overflow-hidden bg-[#FDFBF7] text-slate-800 font-sans">
       {/* 1. 좌측 공통 네비게이션 사이드바 */}
       <AdminSidebar />

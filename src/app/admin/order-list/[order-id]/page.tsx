@@ -181,91 +181,82 @@ const AdminOrderDetailPage = ({ params }: { params: Promise<{ "order-id": string
   const [statusOverride, setStatusOverride] = useState<"SUCCESS" | "PENDING" | "FAILED">("SUCCESS");
   const [showOverrideWarning, setShowOverrideWarning] = useState(false);
 
-  // 데이터 로드
-  useEffect(() => {
-    const fetchOrderDetail = async () => {
-      try {
-        setLoading(true);
-        // TODO: 실제 백엔드 연동 시: const res = await fetch(`/api/admin/orders/${orderId}`);
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-        const matchedOrder = MOCK_DETAILS[orderId] || getFallbackDetail(orderId);
-        setOrder(matchedOrder);
-        setStatusOverride(matchedOrder.status);
-      } catch (err) {
-        console.error("주문 상세조회 로딩 에러:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // 데이터 로드 공통 함수
+  const fetchOrderDetail = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin/orders/${orderId}`);
+      if (!res.ok) throw new Error("Order detail fetch failed");
+      const matchedOrder = await res.json();
+      
+      setOrder(matchedOrder);
+      setStatusOverride(matchedOrder.status);
+    } catch (err) {
+      console.error("주문 상세조회 로딩 에러:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrderDetail();
   }, [orderId]);
 
-  // 해몽 재생성 시뮬레이션 로직
+  // 해몽 재생성 실제 API 연동
   const handleRegenerateAnalysis = async () => {
     if (!order) return;
 
     try {
       setIsRegenerating(true);
-      // TODO: 실제 백엔드 API 연동 시: const res = await fetch(`/api/admin/orders/${orderId}/regenerate`, { method: "POST" });
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      setOrder(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          aiAnalysis: {
-            symbolism: "무의식이 완전히 새로운 방향성으로 튜닝되어 해독되었습니다. 꿈속에 나타난 디테일 요소들은 억제되었던 자아의 그림자(Shadow)를 고스란히 반영하고 있으며, 긍정적인 삶의 리비도 충동이 새로운 돌파구를 열고자 애쓰는 역동입니다.",
-            advice: "현재 삶의 불만족 요소를 회피하려는 충동이 잠재해 있으니, 현실의 소소한 일상에서 작은 성취감을 누리도록 라이프스타일을 조정해 보십시오.",
-            prediction: "당장 큰 횡재수보다는, 인간관계의 해묵은 오해가 풀려 심리적인 체증이 시원하게 풀리는 변화를 맞게 됩니다.",
-            fullText: "재생성 필터링 분석 완료: 본 해석은 관리자의 품질 모니터링 감사 정책에 따라 LLM 엔진을 통해 즉각 최신화 및 재연산된 전문 해몽 분석서입니다."
-          },
-          updatedAt: new Date().toISOString(),
-          systemLogs: [
-            ...prev.systemLogs,
-            { 
-              timestamp: format(new Date(), "HH:mm:ss"), 
-              level: "WARN", 
-              message: "어드민 콘솔에 의해 AI 해몽 텍스트 재생성 요청 접수 및 성공적으로 재빌드 완료." 
-            }
-          ]
-        };
+      const res = await fetch(`/api/admin/orders/${orderId}/regenerate`, {
+        method: "POST"
       });
 
-      alert("LLM 꿈 해몽 텍스트가 품질 정책에 맞게 새롭게 재생성되었습니다.");
-    } catch (err) {
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.message || "Regeneration failed");
+      }
+
+      alert("LLM 꿈 해몽 텍스트 재생성 요청이 정상적으로 접수되었습니다. (백그라운드에서 AI 생성 및 스토리지가 업데이트되고 있습니다.)");
+      
+      // 약간의 지연(예: 3초) 후 백그라운드 갱신 반영을 위해 상세 정보를 자동으로 다시 읽어옵니다.
+      setTimeout(() => {
+        fetchOrderDetail();
+      }, 3000);
+    } catch (err: any) {
       console.error("해몽 재생성 실패:", err);
-      alert("재생성 처리 중 에러가 발생했습니다.");
+      alert(`재생성 처리 중 에러가 발생했습니다: ${err.message}`);
     } finally {
       setIsRegenerating(false);
     }
   };
 
-  // 거래 상태 강제 강등/승격 Override 시뮬레이션
-  const handleStatusOverride = () => {
+  // 거래 상태 강제 강등/승격 Override 실제 API 연동
+  const handleStatusOverride = async () => {
     if (!order) return;
     
-    setOrder(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        status: statusOverride,
-        updatedAt: new Date().toISOString(),
-        systemLogs: [
-          ...prev.systemLogs,
-          {
-            timestamp: format(new Date(), "HH:mm:ss"),
-            level: "WARN",
-            message: `관리자 강제 제어로 결제 상태 오버라이드 갱신: ${prev.status} -> ${statusOverride}`
-          }
-        ]
-      };
-    });
-    
-    setShowOverrideWarning(false);
-    alert(`주문 상태가 [${statusOverride === "SUCCESS" ? "결제 완료" : statusOverride === "PENDING" ? "입금 대기" : "결제 실패"}] 상태로 강제 변경되었습니다.`);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status: statusOverride })
+      });
+
+      if (!res.ok) throw new Error("Status override failed");
+      
+      alert(`주문 상태가 [${statusOverride === "SUCCESS" ? "결제 완료" : statusOverride === "PENDING" ? "입금 대기" : "결제 실패"}] 상태로 강제 보정되었습니다.`);
+      
+      setShowOverrideWarning(false);
+      // 최신화된 DB 데이터와 시스템 감사 로그 갱신을 위해 데이터 재호출
+      fetchOrderDetail();
+    } catch (err) {
+      console.error("상태 오버라이드 처리 중 오류 발생:", err);
+      alert("상태 오버라이드 갱신에 실패했습니다.");
+    }
   };
+
 
   if (loading) {
     return (

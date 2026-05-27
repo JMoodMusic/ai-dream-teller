@@ -177,19 +177,19 @@ const PERIOD_DATA: Record<PeriodType, DashboardData> = {
 // TODO: 추후 백엔드 어드민 대시보드 API(/api/admin/dashboard?period=...) 연동 시 React Query 또는 SWR 등 캐싱 기법 적용 (FIX: API 쿼리 파라미터 유효성 검사 필수)
 const AdminDashboardPage = () => {
   const [activePeriod, setActivePeriod] = useState<PeriodType>("7d");
-  const [data, setData] = useState<DashboardData>(PERIOD_DATA["7d"]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
-  // 기간 전환 시 데이터 바인딩 시뮬레이션
+  // 기간 전환 시 실제 백엔드 API로부터 통계 정보 로드
   useEffect(() => {
     const loadPeriodData = async () => {
       try {
         setIsLoading(true);
-        // TODO: 실제 백엔드 API 요청 시: const res = await fetch(`/api/admin/dashboard?period=${activePeriod}`);
-        // 시뮬레이션을 위해 짧은 딜레이 추가
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setData(PERIOD_DATA[activePeriod]);
+        const res = await fetch(`/api/admin/dashboard?period=${activePeriod}`);
+        if (!res.ok) throw new Error("Dashboard fetch failed");
+        const json = await res.json();
+        setData(json);
       } catch (err) {
         console.error("Dashboard loading error:", err);
       } finally {
@@ -200,8 +200,19 @@ const AdminDashboardPage = () => {
     loadPeriodData();
   }, [activePeriod]);
 
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+        <p className="text-slate-500 font-medium animate-pulse">매출 통계 분석 데이터를 연산하고 있습니다...</p>
+      </div>
+    );
+  }
+
   // 차트 렌더링에 사용할 최대값 및 계산 변수들
   const maxChartValue = Math.max(...data.chartData.map((d) => d.value), 1000);
+
 
   return (
     <div className="space-y-8">

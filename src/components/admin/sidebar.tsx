@@ -12,6 +12,7 @@ import {
   Sparkles 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { adminLogout } from "@/app/admin-login/actions";
 
 interface SidebarItem {
   name: string;
@@ -44,9 +45,9 @@ const AdminSidebar = () => {
 
   const handleLogout = async () => {
     try {
-      // TODO: 백엔드 어드민 로그아웃 API 연동 필요 (/api/auth/sign-out 호출 등)
+      await adminLogout();
       alert("로그아웃 되었습니다.");
-      router.push("/");
+      router.push("/admin-login");
     } catch (error) {
       console.error("로그아웃 중 오류가 발생했습니다:", error);
     }
