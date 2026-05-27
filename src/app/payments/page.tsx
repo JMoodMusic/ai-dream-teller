@@ -21,6 +21,7 @@ function PaymentsContent() {
   const [orderId, setOrderId] = useState<string>("");
   const [formattedDate, setFormattedDate] = useState<string>("");
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [refundConsent, setRefundConsent] = useState(false);
 
   useEffect(() => {
     // Hydration 에러 방지를 위해 클라이언트 마운트 후 랜덤 값 할당
@@ -79,6 +80,12 @@ function PaymentsContent() {
     try {
       setPaymentError(null);
       if (!widgets) return;
+
+      // 대한민국 전자상거래법 준수: 청약철회 제한 고지 사항 동의 체크 가드
+      if (!refundConsent) {
+        setPaymentError("디지털콘텐츠 청약철회 제한 고지 사항에 동의해야 결제를 진행할 수 있습니다.");
+        return;
+      }
 
       // 1. 세션 스토리지에서 꿈 정보 가져오기
       const savedState = sessionStorage.getItem("dreamTellerState");
@@ -232,6 +239,21 @@ function PaymentsContent() {
               <p>{paymentError}</p>
             </div>
           )}
+
+          {/* 대한민국 전자상거래법 준수 청약철회 제한 고지 */}
+          <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="refund-consent"
+              checked={refundConsent}
+              onChange={(e) => setRefundConsent(e.target.checked)}
+              className="mt-1 w-4.5 h-4.5 rounded text-purple-600 focus:ring-purple-500 border-slate-300 cursor-pointer"
+            />
+            <label htmlFor="refund-consent" className="text-xs text-slate-500 font-medium leading-relaxed cursor-pointer select-none">
+              <span className="text-purple-600 font-bold block mb-1">[필수] 디지털콘텐츠 청약철회 제한 동의</span>
+              본 상품은 결제 완료와 동시에 생성형 AI 해몽 연산 및 이미지 시각화 서비스가 즉시 개시되는 디지털콘텐츠 상품입니다. <strong>전자상거래법 제17조 제2항 제5호</strong>에 의거하여 <strong>AI 연산 및 서비스 제공이 개시된 이후에는 단순 변심으로 인한 청약철회(환불 및 취소)가 절대 불가능함</strong>에 동의합니다. (단, 시스템 오류 등으로 결과물 제공이 실패한 경우 전액 환불됩니다.)
+            </label>
+          </div>
 
           <Button
             className="w-full h-14 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg border-0 shadow-sm transition-all"

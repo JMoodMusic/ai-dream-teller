@@ -27,6 +27,8 @@ export default function DreamTellerPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [guestPhone, setGuestPhone] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
+  const [guestPrivacyConsent, setGuestPrivacyConsent] = useState(false);
+  const [aiServiceConsent, setAiServiceConsent] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -167,7 +169,8 @@ export default function DreamTellerPage() {
 
   const isFormValid = selectedExpert && 
                       dreamContent.trim().length >= 5 && 
-                      (isAuthenticated || (guestPhone.length >= 12 && guestPassword.length >= 4));
+                      aiServiceConsent && // 필수: AI 생성물 한계 및 저작권 동의
+                      (isAuthenticated || (guestPhone.length >= 12 && guestPassword.length >= 4 && guestPrivacyConsent)); // 필수: 비회원 개인정보 동의
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 selection:bg-purple-200 relative overflow-hidden">
@@ -475,6 +478,29 @@ export default function DreamTellerPage() {
                           className="h-12 bg-white/80 focus:border-purple-400 focus:ring-purple-400/20"
                         />
                       </div>
+
+                      {/* 대한민국 개인정보보호법 준수: 비회원 개인정보 최소 수집 동의 */}
+                      <div className="pt-4 border-t border-slate-100 flex items-start gap-3">
+                        <Checkbox
+                          id="guest-privacy-consent"
+                          checked={guestPrivacyConsent}
+                          onCheckedChange={(checked) => setGuestPrivacyConsent(checked === true)}
+                          className="mt-1 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <label
+                            htmlFor="guest-privacy-consent"
+                            className="text-xs font-bold text-slate-700 leading-normal cursor-pointer select-none"
+                          >
+                            [필수] 비회원 개인정보 수집 및 이용 동의
+                          </label>
+                          <p className="text-[10px] text-slate-500 leading-normal">
+                            * 수집 항목: 전화번호, 조회 비밀번호<br />
+                            * 수집 목적: 비회원 주문 식별, 결제 거래 원장 매핑 및 의뢰 결과 조회 서비스 제공<br />
+                            * <strong>보유 기간: 전자상거래법에 의거 5년 보존 후 지체 없이 영구 파기</strong>
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </AccordionContent>
@@ -508,8 +534,29 @@ export default function DreamTellerPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="sticky bottom-6 z-20"
+          className="sticky bottom-6 z-20 space-y-3"
         >
+          {/* 대한민국 표시광고법 및 콘텐츠산업진흥법 준수: AI 서비스 한계 및 저작권 필수 동의 */}
+          <div className="mx-auto max-w-xl bg-white/90 backdrop-blur-md border border-purple-100 shadow-lg rounded-2xl p-4 flex items-start gap-3">
+            <Checkbox
+              id="ai-service-consent"
+              checked={aiServiceConsent}
+              onCheckedChange={(checked) => setAiServiceConsent(checked === true)}
+              className="mt-0.5 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 shrink-0"
+            />
+            <div className="grid gap-1">
+              <label
+                htmlFor="ai-service-consent"
+                className="text-xs font-bold text-slate-800 leading-normal cursor-pointer select-none"
+              >
+                [필수] AI 분석 한계 고지 및 저작권 귀속 동의
+              </label>
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                생성형 AI 모델(Gemini, Imagen)이 출력하는 해몽 분석과 이미지는 <strong>비과학적 신비학 및 상징을 토대로 한 주관적인 결과물로 환각(Hallucination) 등의 기술적 오류</strong>가 존재할 수 있습니다. 또한, AI 생성 저작물 특성상 <strong>저작권 귀속 및 비독점적 상업 사용 권리 한계</strong>가 서비스 이용약관 조항에 따름에 동의합니다.
+              </p>
+            </div>
+          </div>
+
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-xl rounded-full p-2 flex items-center justify-between pl-6 transition-all">
             <div className="flex flex-col">
               <span className="text-xs text-slate-500 font-medium">총 결제 금액</span>

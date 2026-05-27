@@ -9,17 +9,42 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+/**
+ * 개인정보 비식별화 필터 (PII Masking Filter)
+ * - 전화번호, 이메일 주소, 주민등록번호 등 핵심 PII를 마스킹하여 유출을 선제 방어
+ */
+export function sanitizePII(text: string): string {
+  if (!text) return text;
+  
+  // 1. 전화번호 정규식 (010-1234-5678, 02-123-4567, 01012345678 등)
+  const phoneRegex = /(01[016789][- ]?\d{3,4}[- ]?\d{4})|(02|0[3-9]\d{1})[- ]?\d{3,4}[- ]?\d{4}/g;
+  
+  // 2. 이메일 정규식
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+
+  // 3. 주민등록번호 및 외국인등록번호 정규식
+  const rrnRegex = /\d{6}[- ]?[1-4]\d{6}/g;
+
+  return text
+    .replace(phoneRegex, "[연락처 비식별화]")
+    .replace(emailRegex, "[이메일 비식별화]")
+    .replace(rrnRegex, "[식별번호 비식별화]");
+}
+
 export async function processAIGeneration(orderId: string, dreamContent: string, includeImage: boolean) {
   let aiAnalysis = "해몽 분석 결과를 생성하지 못했습니다.";
   let imageUrl: string | null = null;
   let imageGenerationFailed = false;
   let imgErrorDetails = "";
 
+  // 대한민국 개인정보 보호법 준수: AI에 꿈 전송 전 PII 비식별 가드 처리
+  const safeDreamContent = sanitizePII(dreamContent);
+
   try {
     const prompt = `다음은 사용자의 꿈 내용입니다. 이 꿈을 전문적이고 친절하게 해석해주세요.
 결과에는 꿈의 의미, 상징, 그리고 앞으로의 조언이 포함되어야 합니다.
 
-꿈 내용: ${dreamContent}`;
+꿈 내용: ${safeDreamContent}`;
     let response;
     let retries = 3;
     let delay = 2000; // 초기 2초 대기
@@ -54,7 +79,7 @@ export async function processAIGeneration(orderId: string, dreamContent: string,
           model: "gemini-2.5-flash",
           contents: `Create a highly descriptive, visually evocative English prompt for an AI image generator (like Midjourney or DALL-E) based on the following dream and its analysis. The prompt should capture the mood, atmosphere, and key symbols. Output ONLY the English prompt text, without any conversational filler or quotes.
           
-Dream: ${dreamContent}
+Dream: ${safeDreamContent}
 Analysis: ${aiAnalysis}`,
         });
 
